@@ -1,6 +1,6 @@
 {
-    "name": "ketab-online-sdk",
-    "description": "JavaScript SDK for accessing ketabonline.com books",
+    "name": "turath-sdk",
+    "description": "JavaScript SDK for accessing turath.io books",
     "version": "1.0.0",
     "author": "Ragaeeb Haq",
     "license": "MIT",
@@ -11,7 +11,7 @@
     "type": "module",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/ragaeeb/ketab-online-sdk.git"
+        "url": "git+https://github.com/ragaeeb/turath-sdk.git"
     },
     "engines": {
         "node": ">=20.0.0"
@@ -28,7 +28,7 @@
         "e2e": "vitest run --config vitest.e2e.config.ts"
     },
     "keywords": [
-        "ketabonline.com",
+        "turath.io",
         "arabic",
         "islamic"
     ],
@@ -39,7 +39,6 @@
         "@semantic-release/changelog": "^6.0.3",
         "@semantic-release/git": "^10.0.1",
         "@types/node": "^22.7.4",
-        "@types/unzipper": "^0.10.10",
         "@vitest/coverage-v8": "^2.1.1",
         "eslint": "^9.11.1",
         "eslint-config-prettier": "^9.1.0",
@@ -56,7 +55,7 @@
         "vitest": "^2.1.1"
     },
     "dependencies": {
-        "unzipper": "^0.12.3"
+        "wretch": "^2.10.0"
     },
-    "packageManager": "pnpm@9.11.0+sha512.0a203ffaed5a3f63242cd064c8fb5892366c103e328079318f78062f24ea8c9d50bc6a47aa3567cabefd824d170e78fa2745ed1f16b132e16436146b7688f19b"
+    "packageManager": "pnpm@9.12.1+sha512.e5a7e52a4183a02d5931057f7a0dbff9d5e9ce3161e33fa68ae392125b79282a8a8a470a51dfc8a0ed86221442eb2fb57019b0990ed24fab519bf0e1bc5ccfc4"
 }

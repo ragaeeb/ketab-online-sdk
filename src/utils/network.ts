@@ -1,51 +1,15 @@
-import { Buffer } from 'buffer';
-import { IncomingMessage } from 'http';
-import https from 'https';
-import { URL, URLSearchParams } from 'url';
+import wretch, { Wretch } from 'wretch';
+import QueryStringAddon from 'wretch/addons/queryString';
 
-export const buildUrl = (endpoint: string, params: Record<string, any>): URL => {
-    const url = new URL(endpoint);
-    {
-        const searchParams = new URLSearchParams();
+const baseApi = wretch('https://api.turath.io').addon(QueryStringAddon);
+const fileApi: Wretch = wretch('https://files.turath.io/books');
 
-        Object.entries(params).forEach(([key, value]) => {
-            searchParams.append(key, value.toString());
-        });
+type JsonResponse = Record<string, any>;
 
-        url.search = searchParams.toString();
-    }
-
-    return url;
+export const getFileJson = async (path: string): Promise<JsonResponse> => {
+    return fileApi.url(path).get().json();
 };
 
-export const httpsGet = (url: string | URL): Promise<Buffer | Record<string, any>> => {
-    return new Promise((resolve, reject) => {
-        https
-            .get(url, (res: IncomingMessage) => {
-                const contentType = res.headers['content-type'] || '';
-                const dataChunks: Buffer[] = [];
-
-                res.on('data', (chunk: Buffer) => {
-                    dataChunks.push(chunk);
-                });
-
-                res.on('end', () => {
-                    const fullData = Buffer.concat(dataChunks);
-
-                    if (contentType.includes('application/json')) {
-                        try {
-                            const json = JSON.parse(fullData.toString('utf-8'));
-                            resolve(json);
-                        } catch (error: any) {
-                            reject(new Error(`Failed to parse JSON: ${error.message}`));
-                        }
-                    } else {
-                        resolve(fullData);
-                    }
-                });
-            })
-            .on('error', (error) => {
-                reject(new Error(`Error making request: ${error.message}`));
-            });
-    });
+export const getJson = async (path: string, queryParams: JsonResponse = {}): Promise<JsonResponse> => {
+    return baseApi.url(path).query(queryParams).get().json();
 };
