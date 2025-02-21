@@ -38,6 +38,22 @@ export interface BookContents extends BookInfo {
     ris_file: string;
 }
 
+export interface CategoryInfo {
+    id: number;
+    parent: number;
+    name: string;
+    image_url: string;
+    created_at: string;
+    updated_at: string;
+    books_updated_at: string;
+    is_active: number;
+    is_deleted: number;
+    books_count: number;
+    order: number;
+    children_count: number;
+    lang: string;
+}
+
 export interface BookInfo {
     authors?: Author[];
     bibliography?: string;

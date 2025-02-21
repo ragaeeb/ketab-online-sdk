@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getAuthorInfo, getBookContents, getBookInfo, getBooks } from '../src/index';
+import { getAuthorInfo, getBookContents, getBookInfo, getBooks, getCategoryInfo } from '../src/index';
 
 describe('e2e', () => {
     describe('getBookInfo', () => {
@@ -95,6 +95,22 @@ describe('e2e', () => {
                     lang: 'ar',
                     name: 'ابن حزم',
                     resume: expect.any(String),
+                }),
+            );
+        });
+    });
+
+    describe('getCategoryInfo', () => {
+        it('should get the category data', async () => {
+            const result = await getCategoryInfo(2);
+            expect(result).toEqual(
+                expect.objectContaining({
+                    name: 'التفاسير',
+                    image_url: expect.any(String),
+                    created_at: '2019-10-24 10:57:53',
+                    is_active: 1,
+                    books_count: expect.any(Number),
+                    lang: 'ar',
                 }),
             );
         });
