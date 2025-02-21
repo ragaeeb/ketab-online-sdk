@@ -1,8 +1,8 @@
-import { createWriteStream, promises as fs } from 'fs';
-import { IncomingMessage } from 'http';
-import https from 'https';
-import os from 'os';
-import path from 'path';
+import { createWriteStream, promises as fs } from 'node:fs';
+import { IncomingMessage } from 'node:http';
+import https from 'node:https';
+import os from 'node:os';
+import path from 'node:path';
 import { pipeline } from 'stream/promises';
 import unzipper, { Entry } from 'unzipper';
 

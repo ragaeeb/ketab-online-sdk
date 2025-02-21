@@ -1,7 +1,7 @@
-import { Buffer } from 'buffer';
-import { IncomingMessage } from 'http';
-import https from 'https';
-import { URL, URLSearchParams } from 'url';
+import { Buffer } from 'node:buffer';
+import { IncomingMessage } from 'node:http';
+import https from 'node:https';
+import { URL, URLSearchParams } from 'node:url';
 
 export const buildUrl = (endpoint: string, params: Record<string, any>): URL => {
     const url = new URL(endpoint);

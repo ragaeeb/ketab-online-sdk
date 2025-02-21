@@ -1,6 +1,6 @@
-import { promises as fs } from 'fs';
+import { promises as fs } from 'node:fs';
 
-import { ApiResponse, BookContents, BookInfo, BookRequestOptions } from './types';
+import { ApiResponse, AuthorInfo, BookContents, BookInfo, BookRequestOptions } from './types';
 import { removeFalsyValues } from './utils/common';
 import { createTempDir, unzipFromUrl } from './utils/io';
 import { buildUrl, httpsGet } from './utils/network';
@@ -32,6 +32,29 @@ export const downloadBook = async (id: number, outputFile: string): Promise<stri
     await fs.rm(outputDir, { recursive: true });
 
     return outputFile;
+};
+
+/**
+ * Retrieves information about the author with the given ID.
+ *
+ * @param {number} id - The ID of the author.
+ * @returns {Promise<AuthorInfo>} A promise that resolves with the author information.
+ * @throws Will throw an error if the author is not found or an unknown error occurs.
+ */
+export const getAuthorInfo = async (id: number): Promise<AuthorInfo> => {
+    const response: ApiResponse = (await httpsGet(
+        `https://backend.ketabonline.com/api/v2/authors/${id}`,
+    )) as ApiResponse;
+
+    if (response.code === 404) {
+        throw new Error(`Book ${id} not found`);
+    }
+
+    if (response.code === 200) {
+        return removeFalsyValues((response as any).data) as AuthorInfo;
+    }
+
+    throw new Error(`Unknown error: ${JSON.stringify(response)}`);
 };
 
 /**
