@@ -1,6 +1,6 @@
 import { promises as fs } from 'node:fs';
 
-import { ApiResponse, AuthorInfo, BookContents, BookInfo, BookRequestOptions } from './types';
+import { ApiResponse, AuthorInfo, BookContents, BookInfo, BookRequestOptions, CategoryInfo } from './types';
 import { removeFalsyValues } from './utils/common';
 import { createTempDir, unzipFromUrl } from './utils/io';
 import { buildUrl, httpsGet } from './utils/network';
@@ -47,7 +47,7 @@ export const getAuthorInfo = async (id: number): Promise<AuthorInfo> => {
     )) as ApiResponse;
 
     if (response.code === 404) {
-        throw new Error(`Book ${id} not found`);
+        throw new Error(`Author ${id} not found`);
     }
 
     if (response.code === 200) {
@@ -88,6 +88,29 @@ export const getBookInfo = async (id: number): Promise<BookInfo> => {
 
     if (response.code === 200) {
         return removeFalsyValues((response as any).data) as BookInfo;
+    }
+
+    throw new Error(`Unknown error: ${JSON.stringify(response)}`);
+};
+
+/**
+ * Retrieves information about the category with the given ID.
+ *
+ * @param {number} id - The ID of the category.
+ * @returns {Promise<CategoryInfo>} A promise that resolves with the book information.
+ * @throws Will throw an error if the category is not found or an unknown error occurs.
+ */
+export const getCategoryInfo = async (id: number): Promise<CategoryInfo> => {
+    const response: ApiResponse = (await httpsGet(
+        `https://backend.ketabonline.com/api/v2/categories/${id}`,
+    )) as ApiResponse;
+
+    if (response.code === 404) {
+        throw new Error(`Category ${id} not found`);
+    }
+
+    if (response.code === 200) {
+        return removeFalsyValues((response as any).data) as CategoryInfo;
     }
 
     throw new Error(`Unknown error: ${JSON.stringify(response)}`);

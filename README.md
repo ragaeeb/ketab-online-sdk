@@ -64,6 +64,21 @@ Fetch information about an author.
 })();
 ```
 
+### Get Category Information
+
+Fetch information about a category.
+
+```javascript
+(async () => {
+    try {
+        const categoryInfo = await getCategoryInfo(123);
+        console.log(categoryInfo);
+    } catch (error) {
+        console.error(error.message);
+    }
+})();
+```
+
 ### Get Book Contents
 
 Fetch the contents of a book, including chapters and sections.
