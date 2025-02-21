@@ -1,7 +1,6 @@
-import fs from 'fs';
 import { describe, expect, it } from 'vitest';
 
-import { getBookContents, getBookInfo, getBooks } from '../src/index';
+import { getAuthorInfo, getBookContents, getBookInfo, getBooks } from '../src/index';
 
 describe('e2e', () => {
     describe('getBookInfo', () => {
@@ -82,6 +81,23 @@ describe('e2e', () => {
             },
             { timeout: 5000 },
         );
+    });
+
+    describe('getAuthorInfo', () => {
+        it('should get the author data', async () => {
+            const result = await getAuthorInfo(2);
+            expect(result).toEqual(
+                expect.objectContaining({
+                    books_count: expect.any(Number),
+                    created_at: '2020-02-14 18:00:00',
+                    id: 2,
+                    is_active: 1,
+                    lang: 'ar',
+                    name: 'ابن حزم',
+                    resume: expect.any(String),
+                }),
+            );
+        });
     });
 
     describe('getBookContents', () => {

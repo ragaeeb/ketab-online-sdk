@@ -1,93 +1,42 @@
-type Author = {
+export enum QueryScope {
+    Titles = 'titles',
+}
+
+export enum SortDirection {
+    Ascending = 'ASC',
+    Descending = 'DESC',
+}
+
+export type ApiResponse = {
+    code: number;
+    data?: any;
+    links?: PaginationLinks;
+    message?: string;
+    meta?: PaginationMeta;
+    status: boolean;
+};
+
+export interface AuthorInfo {
+    books_count: number;
+    books_updated_at: string;
+    created_at: string;
     id: number;
+    is_active: number;
+    is_deleted: number;
+    is_followed: boolean;
+    lang: string;
+    long_name: string;
     name: string;
-};
+    order: number;
+    resume: string;
+    updated_at: string;
+}
 
-type Category = {
-    id: number;
-    name: string;
-};
-
-type Meta = {
-    name: string;
-    value?: string;
-};
-
-type Part = {
-    author?: string;
-    creator?: string;
-    form?: number;
-    id: number;
-    is_encrypted?: number;
-    is_optimized?: number;
-    javascript?: number;
-    name: string;
-    page: number;
-    page_id: number;
-    pages: number;
-    pdf_url?: string;
-    producer?: string;
-    size: number;
-    title?: string;
-};
-
-type IndexItem = {
-    children?: IndexItem[];
-    id: number;
-    page: number;
-    page_id: number;
-    parent?: number;
-    part_name: string;
-    reciters?: any[];
-    title: string;
-    title_level: number;
-};
-
-type FileData = {
-    size: number;
-    url: string;
-};
-
-type Files = {
-    data: FileData;
-    pdf?: FileData;
-};
-
-type PaginationItem = {
-    number: number;
-    page_id: number;
-};
-
-type Hadeeth = {
-    hukm_ejmali: string;
-    hukm_tafseeli?: string;
-    hukm_tafseeli_arabic?: string;
-    mouzuh?: string;
-    type_atraaf: string;
-    type_qft: string;
-    type_rowaat: string;
-};
-
-type Quran = {
-    from_aya_id: number;
-    is_range?: number;
-    sura_id: number;
-    to_aya_id: number;
-};
-
-type Page = {
-    content: string;
-    hadeeth?: Hadeeth; // Can be null or undefined if not present
-    id: number;
-    index: number;
-    page: number;
-    part: null | number;
-    quran: Quran;
-    reciters: any[];
-    rowa: any[];
-    seal: string;
-    shrooh: any[];
-};
+export interface BookContents extends BookInfo {
+    image_file: string;
+    pages: Page[];
+    ris_file: string;
+}
 
 export interface BookInfo {
     authors?: Author[];
@@ -148,11 +97,89 @@ export interface BookInfo {
     year?: string;
 }
 
-export interface BookContents extends BookInfo {
-    image_file: string;
-    pages: Page[];
-    ris_file: string;
-}
+export type BookRequestOptions = {
+    is_active?: number;
+    is_deleted?: number;
+    limit?: number;
+    page?: number;
+    query?: string;
+    scope?: QueryScope;
+    sort_direction?: SortDirection;
+    sort_field?: string;
+};
+
+type Author = {
+    id: number;
+    name: string;
+};
+
+type Category = {
+    id: number;
+    name: string;
+};
+
+type FileData = {
+    size: number;
+    url: string;
+};
+
+type Files = {
+    data: FileData;
+    pdf?: FileData;
+};
+
+type Hadeeth = {
+    hukm_ejmali: string;
+    hukm_tafseeli?: string;
+    hukm_tafseeli_arabic?: string;
+    mouzuh?: string;
+    type_atraaf: string;
+    type_qft: string;
+    type_rowaat: string;
+};
+
+type IndexItem = {
+    children?: IndexItem[];
+    id: number;
+    page: number;
+    page_id: number;
+    parent?: number;
+    part_name: string;
+    reciters?: any[];
+    title: string;
+    title_level: number;
+};
+
+type Meta = {
+    name: string;
+    value?: string;
+};
+
+type Page = {
+    content: string;
+    hadeeth?: Hadeeth; // Can be null or undefined if not present
+    id: number;
+    index: number;
+    page: number;
+    part: null | number;
+    quran: Quran;
+    reciters: any[];
+    rowa: any[];
+    seal: string;
+    shrooh: any[];
+};
+
+type PaginationItem = {
+    number: number;
+    page_id: number;
+};
+
+type PaginationLinks = {
+    first: string;
+    last: string;
+    next?: string;
+    prev?: string;
+};
 
 type PaginationMeta = {
     current_page: number;
@@ -163,38 +190,27 @@ type PaginationMeta = {
     total: number;
 };
 
-type PaginationLinks = {
-    first: string;
-    last: string;
-    next?: string;
-    prev?: string;
+type Part = {
+    author?: string;
+    creator?: string;
+    form?: number;
+    id: number;
+    is_encrypted?: number;
+    is_optimized?: number;
+    javascript?: number;
+    name: string;
+    page: number;
+    page_id: number;
+    pages: number;
+    pdf_url?: string;
+    producer?: string;
+    size: number;
+    title?: string;
 };
 
-export type ApiResponse = {
-    code: number;
-    data?: any;
-    links?: PaginationLinks;
-    message?: string;
-    meta?: PaginationMeta;
-    status: boolean;
-};
-
-export enum SortDirection {
-    Ascending = 'ASC',
-    Descending = 'DESC',
-}
-
-export enum QueryScope {
-    Titles = 'titles',
-}
-
-export type BookRequestOptions = {
-    is_active?: number;
-    is_deleted?: number;
-    limit?: number;
-    page?: number;
-    query?: string;
-    scope?: QueryScope;
-    sort_direction?: SortDirection;
-    sort_field?: string;
+type Quran = {
+    from_aya_id: number;
+    is_range?: number;
+    sura_id: number;
+    to_aya_id: number;
 };
