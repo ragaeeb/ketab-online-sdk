@@ -12,99 +12,87 @@
 
 # ketab-online-sdk
 
-SDK to access ketabonline.com APIs.
+SDK to access the public APIs exposed by [ketabonline.com](https://ketabonline.com). The library provides
+helpers to download raw book data, inspect authors and categories, and search for titles without having to
+reverse engineer the HTTP endpoints yourself.
 
 ## Installation
 
-To install ketab-online-sdk, use npm or yarn:
+Install the package with the package manager of your choice. The project is developed with Bun, but the
+published package works from any Node.js runtime that satisfies the `engines` requirement.
 
 ```bash
+# bun
+bun add ketab-online-sdk
+
+# npm
 npm install ketab-online-sdk
-# or
+
+# yarn
 yarn add ketab-online-sdk
-# or
-pnpm i ketab-online-sdk
 ```
 
 ## Usage
 
-### Importing the SDK
+```ts
+import {
+    downloadBook,
+    getAuthorInfo,
+    getBookContents,
+    getBookInfo,
+    getBooks,
+    getCategoryInfo,
+} from 'ketab-online-sdk';
 
-```javascript
-import { getBookInfo, getBookContents, downloadBook } from 'ketab-online-sdk';
+// Retrieve summary information about a book
+const book = await getBookInfo(123);
+
+// Search for books with pagination helpers
+const books = await getBooks({ query: 'الفقه', page: 1, limit: 10 });
+
+// Download a book bundle to disk for offline reading
+const outputPath = await downloadBook(123, './book.json');
 ```
 
-### Get Book Information
+### API surface
 
-Retrieve metadata about a specific book.
+| Function | Description |
+| --- | --- |
+| `downloadBook(id, outputFile)` | Downloads the archived JSON bundle for a book and stores it locally. |
+| `getAuthorInfo(id)` | Returns sanitized author metadata, removing falsy fields the API sometimes includes. |
+| `getBookContents(id)` | Fetches, extracts and parses the JSON payload that contains full book contents. |
+| `getBookInfo(id)` | Retrieves summary information for a book, including publication metadata. |
+| `getBooks(options)` | Lists books with optional pagination, sorting and search query parameters. |
+| `getCategoryInfo(id)` | Fetches metadata for a category, including book counters. |
 
-```javascript
-(async () => {
-    try {
-        const bookInfo = await getBookInfo(123);
-        console.log(bookInfo);
-    } catch (error) {
-        console.error(error.message);
-    }
-})();
+Every helper throws an error when the upstream API answers with an error status, so you can rely on normal
+`try { ... } catch (error) { ... }` flow control.
+
+## Development
+
+The repository is managed with [Bun](https://bun.sh/) and uses [Biome](https://biomejs.dev/) and
+[tsdown](https://github.com/thetarnav/tsdown).
+
+```bash
+bun install            # install dependencies
+bun run build          # build the library with tsdown
+bun test               # run the bun:test based unit suite
+bun run lint           # type-check, lint and format with biome
 ```
 
-### Get Author Information
+To release new functionality run the build, lint and test commands locally before opening a pull request.
 
-Fetch information about an author.
+### Project structure
 
-```javascript
-(async () => {
-    try {
-        const authorInfo = await getAuthorInfo(123);
-        console.log(authorInfo);
-    } catch (error) {
-        console.error(error.message);
-    }
-})();
-```
+- `src/index.ts` – exports the SDK helpers (`downloadBook`, `getBooks`, etc.).
+- `src/utils/common.ts` – shared transforms such as `removeFalsyValues`.
+- `src/utils/io.ts` – filesystem helpers that handle temporary directories and ZIP extraction.
+- `src/utils/network.ts` – wrapper utilities around HTTPS requests and URL construction.
+- `testing/e2e.test.ts` – optional integration smoke test that hits the real API (skipped in CI by default).
+- `tsdown.config.ts` – the bundler entry that targets modern Node runtimes and emits ESM + type definitions.
 
-### Get Category Information
+Keep documentation and tests close to the source files. Any new public helper should include:
 
-Fetch information about a category.
-
-```javascript
-(async () => {
-    try {
-        const categoryInfo = await getCategoryInfo(123);
-        console.log(categoryInfo);
-    } catch (error) {
-        console.error(error.message);
-    }
-})();
-```
-
-### Get Book Contents
-
-Fetch the contents of a book, including chapters and sections.
-
-```javascript
-(async () => {
-    try {
-        const bookContents = await getBookContents(123);
-        console.log(bookContents);
-    } catch (error) {
-        console.error(error.message);
-    }
-})();
-```
-
-### Download Book
-
-Download a book's data to a local file.
-
-```javascript
-(async () => {
-    try {
-        const outputFilePath = await downloadBook(123, './book.json');
-        console.log(`Book downloaded to ${outputFilePath}`);
-    } catch (error) {
-        console.error(error.message);
-    }
-})();
-```
+1. JSDoc explaining the parameters and return values.
+2. A bun:test unit suite demonstrating success and failure conditions.
+3. README updates so downstream consumers know how to use the addition.

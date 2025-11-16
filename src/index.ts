@@ -1,4 +1,4 @@
-import { promises as fs } from 'node:fs';
+import fs from 'node:fs/promises';
 
 import { ApiResponse, AuthorInfo, BookContents, BookInfo, BookRequestOptions, CategoryInfo } from './types';
 import { removeFalsyValues } from './utils/common';
@@ -116,6 +116,12 @@ export const getCategoryInfo = async (id: number): Promise<CategoryInfo> => {
     throw new Error(`Unknown error: ${JSON.stringify(response)}`);
 };
 
+/**
+ * Retrieves a list of books filtered by the provided options.
+ *
+ * @param options - Optional query and pagination parameters.
+ * @returns A promise that resolves with the matching books.
+ */
 export const getBooks = async ({ query, ...options }: BookRequestOptions = {}): Promise<BookInfo[]> => {
     const url = buildUrl(`https://backend.ketabonline.com/api/v2/books`, { ...options, ...(query && { q: query }) });
     const response: ApiResponse = (await httpsGet(url)) as ApiResponse;

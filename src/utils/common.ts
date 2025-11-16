@@ -1,3 +1,9 @@
+/**
+ * Recursively removes falsy values from an object while preserving nested structures.
+ *
+ * @param obj - The object to clean.
+ * @returns A new object containing only truthy values.
+ */
 const cleanObject = (obj: Record<string, any>): Record<string, any> => {
     const newObj: Record<string, any> = {};
 
@@ -32,6 +38,12 @@ const cleanObject = (obj: Record<string, any>): Record<string, any> => {
     return newObj;
 };
 
+/**
+ * Removes falsy values from an object or array, recursively cleaning nested objects.
+ *
+ * @param obj - The value to clean.
+ * @returns A new instance containing only truthy values.
+ */
 export const removeFalsyValues = (obj: any[] | Record<string, any>) => {
     if (Array.isArray(obj)) {
         return obj.map((item) => (typeof item === 'object' ? cleanObject(item) : item)).filter((item) => item); // Filter out falsy items

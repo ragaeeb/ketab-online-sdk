@@ -6,6 +6,12 @@ import path from 'node:path';
 import { pipeline } from 'stream/promises';
 import unzipper, { Entry } from 'unzipper';
 
+/**
+ * Creates a temporary directory inside the operating system's temp folder.
+ *
+ * @param prefix - The prefix to use for the temporary directory name.
+ * @returns A promise that resolves with the path to the created directory.
+ */
 export const createTempDir = async (prefix: string): Promise<string> => {
     const tempDirBase = path.join(os.tmpdir(), prefix);
     return fs.mkdtemp(tempDirBase);

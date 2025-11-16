@@ -1,0 +1,20 @@
+{
+    "$schema": "https://biomejs.dev/schemas/2.3.5/schema.json",
+    "files": {
+        "include": ["src/**/*.{ts,tsx}", "tsdown.config.ts", "release.config.mjs"]
+    },
+    "formatter": {
+        "indentStyle": "space",
+        "indentWidth": 4,
+        "lineWidth": 110
+    },
+    "linter": {
+        "enabled": true,
+        "rules": {
+            "recommended": true
+        }
+    },
+    "organizeImports": {
+        "enabled": true
+    }
+}

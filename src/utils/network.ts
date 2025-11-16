@@ -3,6 +3,13 @@ import { IncomingMessage } from 'node:http';
 import https from 'node:https';
 import { URL, URLSearchParams } from 'node:url';
 
+/**
+ * Constructs a URL by appending the provided query parameters to the endpoint.
+ *
+ * @param endpoint - The API endpoint to augment with query parameters.
+ * @param params - The query parameters to append to the endpoint.
+ * @returns A {@link URL} instance with the provided parameters applied.
+ */
 export const buildUrl = (endpoint: string, params: Record<string, any>): URL => {
     const url = new URL(endpoint);
     {
@@ -18,6 +25,12 @@ export const buildUrl = (endpoint: string, params: Record<string, any>): URL => 
     return url;
 };
 
+/**
+ * Performs an HTTPS GET request and resolves with the parsed JSON body or a raw {@link Buffer}.
+ *
+ * @param url - The URL to request.
+ * @returns A promise resolving to the JSON payload or the binary response body.
+ */
 export const httpsGet = (url: string | URL): Promise<Buffer | Record<string, any>> => {
     return new Promise((resolve, reject) => {
         https
