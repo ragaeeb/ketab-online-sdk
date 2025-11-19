@@ -1,3 +1,5 @@
+# ketab-online-sdk
+
 [![wakatime](https://wakatime.com/badge/user/a0b906ce-b8e7-4463-8bce-383238df6d4b/project/5cb69094-5075-4207-bbc6-2edda0154865.svg)](https://wakatime.com/badge/user/a0b906ce-b8e7-4463-8bce-383238df6d4b/project/5cb69094-5075-4207-bbc6-2edda0154865)
 [![E2E](https://github.com/ragaeeb/ketab-online-sdk/actions/workflows/e2e.yml/badge.svg)](https://github.com/ragaeeb/ketab-online-sdk/actions/workflows/e2e.yml) [![Node.js CI](https://github.com/ragaeeb/ketab-online-sdk/actions/workflows/build.yml/badge.svg)](https://github.com/ragaeeb/ketab-online-sdk/actions/workflows/build.yml)
 ![GitHub License](https://img.shields.io/github/license/ragaeeb/ketab-online-sdk)
@@ -9,8 +11,6 @@
 ![npm](https://img.shields.io/npm/dm/ketab-online-sdk)
 ![GitHub issues](https://img.shields.io/github/issues/ragaeeb/ketab-online-sdk)
 ![GitHub stars](https://img.shields.io/github/stars/ragaeeb/ketab-online-sdk?style=social)
-
-# ketab-online-sdk
 
 SDK to access the public APIs exposed by [ketabonline.com](https://ketabonline.com). The library provides
 helpers to download raw book data, inspect authors and categories, and search for titles without having to

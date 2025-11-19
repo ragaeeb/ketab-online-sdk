@@ -171,13 +171,18 @@ type Meta = {
     value?: string;
 };
 
+type PartReference = {
+    id: number;
+    name: string;
+}
+
 type Page = {
     content: string;
     hadeeth?: Hadeeth; // Can be null or undefined if not present
     id: number;
     index: number;
     page: number;
-    part: null | number;
+    part: null | PartReference;
     quran: Quran;
     reciters: any[];
     rowa: any[];
@@ -206,15 +211,13 @@ type PaginationMeta = {
     total: number;
 };
 
-type Part = {
+type Part = PartReference & {
     author?: string;
     creator?: string;
     form?: number;
-    id: number;
     is_encrypted?: number;
     is_optimized?: number;
     javascript?: number;
-    name: string;
     page: number;
     page_id: number;
     pages: number;
@@ -230,3 +233,18 @@ type Quran = {
     sura_id: number;
     to_aya_id: number;
 };
+
+/**
+ * Logger interface compatible with console and most logging libraries.
+ * All methods are optional to allow partial implementations.
+ */
+export interface Logger {
+    /** Log an informational message */
+    info?: (message: string, ...args: any[]) => void;
+    /** Log a debug message */
+    debug?: (message: string, ...args: any[]) => void;
+    /** Log a warning message */
+    warn?: (message: string, ...args: any[]) => void;
+    /** Log an error message */
+    error?: (message: string, ...args: any[]) => void;
+}
