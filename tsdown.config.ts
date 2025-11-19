@@ -1,11 +1,11 @@
 import { defineConfig } from 'tsdown';
 
 export default defineConfig({
+    clean: true,
+    dts: true,
     entry: ['src/index.ts'],
     format: ['esm'],
-    dts: true,
-    sourcemap: true,
-    clean: true,
     outDir: 'dist',
-    target: 'node22',
+    sourcemap: true,
+    target: 'node24',
 });

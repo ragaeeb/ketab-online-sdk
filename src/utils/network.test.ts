@@ -8,7 +8,7 @@ mock.module('node:https', () => ({
     get: getMock,
 }));
 
-const { buildUrl, httpsGet } = await import('./network?network-test');
+const { buildUrl, httpsGet } = await import('./network');
 
 describe('buildUrl', () => {
     test('adds query parameters to the endpoint', () => {
@@ -36,7 +36,7 @@ describe('httpsGet', () => {
         await expect(promise).resolves.toEqual({ success: true });
     });
 
-    test('returns buffers for non-JSON responses', async () => {
+    test('returns Uint8Array for non-JSON responses', async () => {
         getMock.mockImplementation((url: string, handler: (res: any) => void) => {
             const response = new EventEmitter() as any;
             response.headers = { 'content-type': 'application/octet-stream' };
@@ -47,8 +47,8 @@ describe('httpsGet', () => {
         });
 
         const result = await httpsGet('https://example.com');
-        expect(result).toBeInstanceOf(Buffer);
-        expect((result as Buffer).toString()).toBe('hello');
+        expect(result).toBeInstanceOf(Uint8Array);
+        expect(new TextDecoder().decode(result as Uint8Array)).toBe('hello');
     });
 
     test('rejects when request errors', async () => {
@@ -61,7 +61,6 @@ describe('httpsGet', () => {
             },
         }));
 
-        const promise = httpsGet('https://example.com');
-        await expect(promise).rejects.toThrow('Error making request: network failure');
+        await expect(httpsGet('https://example.com')).rejects.toThrow('Error making request: network failure');
     });
 });

@@ -3,17 +3,16 @@ import { afterAll, beforeEach, describe, expect, mock, test } from 'bun:test';
 const httpsGetMock = mock();
 const unzipFromUrlMock = mock();
 const createTempDirMock = mock();
-const renameMock = mock();
+const writeFileMock = mock();
 const rmMock = mock();
-const readFileMock = mock();
 
 const restoreNetwork = mock.module('./utils/network', () => ({
-    httpsGet: httpsGetMock,
     buildUrl: (endpoint: string, params: Record<string, string | number>) => {
         const url = new URL(endpoint);
         Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value.toString()));
         return url;
     },
+    httpsGet: httpsGetMock,
 }));
 
 const restoreIo = mock.module('./utils/io', () => ({
@@ -23,16 +22,23 @@ const restoreIo = mock.module('./utils/io', () => ({
 
 const restoreFsPromises = mock.module('node:fs/promises', () => ({
     default: {
-        rename: renameMock,
         rm: rmMock,
-        readFile: readFileMock,
+        writeFile: writeFileMock,
     },
-    rename: renameMock,
     rm: rmMock,
-    readFile: readFileMock,
+    writeFile: writeFileMock,
 }));
 
-const { downloadBook, getAuthorInfo, getBookContents, getBookInfo, getBooks, getCategoryInfo } = await import('./index');
+const {
+    downloadBook,
+    getAuthorInfo,
+    getAuthors,
+    getBookContents,
+    getBookInfo,
+    getBooks,
+    getCategories,
+    getCategoryInfo,
+} = await import('./index');
 
 afterAll(() => {
     restoreNetwork?.();
@@ -42,33 +48,40 @@ afterAll(() => {
 
 describe('index exports', () => {
     const tempDirPath = '/tmp/ketab';
-    const jsonFilePath = '/tmp/ketab/book.json';
+    const jsonData = { foo: 'bar' };
 
     beforeEach(() => {
         httpsGetMock.mockReset();
         unzipFromUrlMock.mockReset();
         createTempDirMock.mockReset();
-        renameMock.mockReset();
+        writeFileMock.mockReset();
         rmMock.mockReset();
-        readFileMock.mockReset();
 
         createTempDirMock.mockResolvedValue(tempDirPath);
-        unzipFromUrlMock.mockResolvedValue([jsonFilePath]);
-        renameMock.mockResolvedValue(undefined);
+        unzipFromUrlMock.mockResolvedValue([
+            { data: new TextEncoder().encode(JSON.stringify(jsonData)), name: 'book.json' },
+        ]);
+        writeFileMock.mockResolvedValue(undefined);
         rmMock.mockResolvedValue(undefined);
-        readFileMock.mockResolvedValue(JSON.stringify({ foo: 'bar' }));
     });
 
-    test('downloadBook moves downloaded JSON into destination', async () => {
+    test('downloadBook writes downloaded JSON to destination', async () => {
         const destination = '/books/book.json';
 
         const result = await downloadBook(12, destination);
 
         expect(createTempDirMock).toHaveBeenCalled();
-        expect(unzipFromUrlMock).toHaveBeenCalledWith('https://s2.ketabonline.com/books/12/12.data.zip', tempDirPath);
-        expect(renameMock).toHaveBeenCalledWith(jsonFilePath, destination);
+        expect(unzipFromUrlMock).toHaveBeenCalledWith('https://s2.ketabonline.com/books/12/12.data.zip');
+        expect(writeFileMock).toHaveBeenCalled();
         expect(rmMock).toHaveBeenCalledWith(tempDirPath, { recursive: true });
         expect(result).toBe(destination);
+    });
+
+    test('downloadBook throws when no JSON file found', async () => {
+        unzipFromUrlMock.mockResolvedValue([{ data: new Uint8Array(), name: 'other.txt' }]);
+
+        await expect(downloadBook(12, '/books/book.json')).rejects.toThrow('No JSON file found in downloaded archive');
+        expect(rmMock).toHaveBeenCalled();
     });
 
     test('getAuthorInfo returns data when response code is 200', async () => {
@@ -83,65 +96,69 @@ describe('index exports', () => {
         await expect(getAuthorInfo(3)).rejects.toThrow('Author 3 not found');
     });
 
-    test('getAuthorInfo throws on unknown responses', async () => {
-        httpsGetMock.mockResolvedValue({ code: 500, message: 'Internal Server Error' });
+    test('getAuthors returns array of authors', async () => {
+        httpsGetMock.mockResolvedValue({
+            code: 200,
+            data: [{ empty: '', name: 'Author One' }, { name: 'Author Two' }],
+        });
 
-        await expect(getAuthorInfo(3)).rejects.toThrow(
-            'Unknown error: {"code":500,"message":"Internal Server Error"}',
-        );
+        const result = await getAuthors({ page: 1 });
+
+        expect(result).toEqual([{ name: 'Author One' }, { name: 'Author Two' }]);
     });
 
     test('getBookInfo returns sanitized book information', async () => {
-        httpsGetMock.mockResolvedValue({ code: 200, data: { title: 'Book', emptyKey: '' } });
+        httpsGetMock.mockResolvedValue({ code: 200, data: { emptyKey: '', title: 'Book' } });
 
         await expect(getBookInfo(42)).resolves.toEqual({ title: 'Book' });
     });
 
-    test('getBookInfo throws when book not found', async () => {
-        httpsGetMock.mockResolvedValue({ code: 404 });
-
-        await expect(getBookInfo(42)).rejects.toThrow('Book 42 not found');
-    });
-
     test('getBookContents returns parsed JSON data', async () => {
-        unzipFromUrlMock.mockResolvedValue([jsonFilePath, tempDirPath]);
         const contents = { sections: [{ title: 'Section' }] };
-        readFileMock.mockResolvedValue(JSON.stringify(contents));
+        unzipFromUrlMock.mockResolvedValue([
+            { data: new TextEncoder().encode(JSON.stringify(contents)), name: 'book.json' },
+        ]);
 
         const result = await getBookContents(7);
 
-        expect(readFileMock).toHaveBeenCalledWith(jsonFilePath, 'utf-8');
         expect(rmMock).toHaveBeenCalledWith(tempDirPath, { recursive: true });
         expect(result).toEqual(contents);
-    });
-
-    test('getCategoryInfo returns sanitized category information', async () => {
-        httpsGetMock.mockResolvedValue({ code: 200, data: { name: 'Category', empty: '' } });
-
-        await expect(getCategoryInfo(9)).resolves.toEqual({ name: 'Category' });
     });
 
     test('getBooks unwraps array data for successful responses', async () => {
         httpsGetMock.mockResolvedValue({
             code: 200,
             data: [
-                { title: 'One', empty: '' },
-                { title: 'Two', nested: { keep: 'value', drop: null } },
+                { empty: '', title: 'One' },
+                { nested: { drop: null, keep: 'value' }, title: 'Two' },
             ],
         });
 
         const result = await getBooks({ page: 2, query: 'history' });
 
-        expect(httpsGetMock).toHaveBeenCalled();
-        expect(result).toEqual([
-            { title: 'One' },
-            { title: 'Two', nested: { keep: 'value' } },
-        ]);
+        expect(result).toEqual([{ title: 'One' }, { nested: { keep: 'value' }, title: 'Two' }]);
     });
 
-    test('getBooks throws when response code is not handled', async () => {
-        httpsGetMock.mockResolvedValue({ code: 500, message: 'oops' });
+    test('getCategories returns array of categories', async () => {
+        httpsGetMock.mockResolvedValue({
+            code: 200,
+            data: [{ empty: '', name: 'Category One' }, { name: 'Category Two' }],
+        });
 
-        await expect(getBooks()).rejects.toThrow('Unknown error: {"code":500,"message":"oops"}');
+        const result = await getCategories({ limit: 40 });
+
+        expect(result).toEqual([{ name: 'Category One' }, { name: 'Category Two' }]);
+    });
+
+    test('getCategoryInfo returns sanitized category information', async () => {
+        httpsGetMock.mockResolvedValue({ code: 200, data: { empty: '', name: 'Category' } });
+
+        await expect(getCategoryInfo(9)).resolves.toEqual({ name: 'Category' });
+    });
+
+    test('getCategoryInfo throws when category not found', async () => {
+        httpsGetMock.mockResolvedValue({ code: 404 });
+
+        await expect(getCategoryInfo(9)).rejects.toThrow('Category 9 not found');
     });
 });

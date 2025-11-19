@@ -1,8 +1,7 @@
 {
     "author": "Ragaeeb Haq",
     "dependencies": {
-        "fflate": "^0.8.2",
-        "unzipper": "^0.12.3"
+        "fflate": "^0.8.2"
     },
     "description": "JavaScript SDK for accessing ketabonline.com books",
     "devDependencies": {
@@ -11,7 +10,6 @@
         "@semantic-release/git": "^10.0.1",
         "@types/bun": "^1.3.2",
         "@types/node": "^24.10.1",
-        "@types/unzipper": "^0.10.11",
         "bun-types": "^1.3.2",
         "semantic-release": "^25.0.2",
         "tsdown": "^0.16.5",

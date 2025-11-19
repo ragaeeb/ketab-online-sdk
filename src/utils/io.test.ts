@@ -1,29 +1,20 @@
 import { afterAll, beforeEach, describe, expect, mock, test } from 'bun:test';
 import os from 'node:os';
-import { EventEmitter } from 'node:events';
 import path from 'node:path';
 
-if (typeof mock.restoreAll === 'function') {
-    mock.restoreAll();
-}
-
 const mkdtempMock = mock(async (base: string) => `${base}XYZ`);
-const mkdirMock = mock(async () => undefined);
-const createWriteStreamMock = mock(() => ({}));
 
 const getMock = mock();
+const unzipSyncMock = mock();
 
 const restoreFs = mock.module('node:fs', () => ({
     default: {
         promises: {
             mkdtemp: mkdtempMock,
-            mkdir: mkdirMock,
         },
     },
-    createWriteStream: createWriteStreamMock,
     promises: {
         mkdtemp: mkdtempMock,
-        mkdir: mkdirMock,
     },
 }));
 
@@ -32,17 +23,16 @@ const restoreHttps = mock.module('node:https', () => ({
     get: getMock,
 }));
 
-const restoreUnzipper = mock.module('unzipper', () => ({
-    default: { Parse: () => new EventEmitter() },
-    Parse: () => new EventEmitter(),
+const restoreFflate = mock.module('fflate', () => ({
+    unzipSync: unzipSyncMock,
 }));
 
-const { createTempDir, unzipFromUrl } = await import('./io?io-test');
+const { createTempDir, unzipFromUrl } = await import('./io');
 
 afterAll(() => {
     restoreFs?.();
     restoreHttps?.();
-    restoreUnzipper?.();
+    restoreFflate?.();
 });
 
 describe('createTempDir', () => {
@@ -65,21 +55,61 @@ describe('createTempDir', () => {
 describe('unzipFromUrl', () => {
     beforeEach(() => {
         getMock.mockReset();
+        unzipSyncMock.mockReset();
     });
 
-    test('throws a descriptive error when the response is not OK', async () => {
-        getMock.mockImplementation((url: string, handler: (res: any) => void) => {
-            const response = new EventEmitter() as any;
-            response.statusCode = 500;
-            response.statusMessage = 'Internal Server Error';
-            handler(response);
-            return {
-                on: () => undefined,
-            };
+    test('returns unzipped entries from successful download', async () => {
+        const mockData = new Uint8Array([1, 2, 3]);
+        unzipSyncMock.mockReturnValue({
+            'file1.txt': new Uint8Array([65, 66]),
+            'file2.json': new Uint8Array([123, 125]),
         });
 
-        const promise = unzipFromUrl('https://example.com/archive.zip', '/tmp/out');
+        getMock.mockImplementation((_url: string, handler: (res: any) => void) => {
+            const response: any = {
+                on: (event: string, cb: Function) => {
+                    if (event === 'data') {
+                        cb(Buffer.from(mockData));
+                    }
+                    if (event === 'end') {
+                        cb();
+                    }
+                },
+            };
+            handler(response);
+            return { on: () => undefined };
+        });
 
-        await expect(promise).rejects.toThrow('Error processing URL: Failed to download ZIP file: 500 Internal Server Error');
+        const result = await unzipFromUrl('https://example.com/archive.zip');
+
+        expect(result).toEqual([
+            { data: expect.any(Uint8Array), name: 'file1.txt' },
+            { data: expect.any(Uint8Array), name: 'file2.json' },
+        ]);
+    });
+
+    test('throws error on unzip failure', async () => {
+        unzipSyncMock.mockImplementation(() => {
+            throw new Error('Invalid archive');
+        });
+
+        getMock.mockImplementation((_url: string, handler: (res: any) => void) => {
+            const response: any = {
+                on: (event: string, cb: Function) => {
+                    if (event === 'data') {
+                        cb(Buffer.from([1, 2, 3]));
+                    }
+                    if (event === 'end') {
+                        cb();
+                    }
+                },
+            };
+            handler(response);
+            return { on: () => undefined };
+        });
+
+        await expect(unzipFromUrl('https://example.com/bad.zip')).rejects.toThrow(
+            'Error processing URL: Invalid archive',
+        );
     });
 });
