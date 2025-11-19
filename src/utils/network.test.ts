@@ -1,9 +1,9 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { EventEmitter } from 'node:events';
 
 const networkHttpsGetMock = mock();
 
-// Mock node:https for network.test.ts only
+// Mock node:https for network.test.ts
 mock.module('node:https', () => ({
     default: { get: networkHttpsGetMock },
     get: networkHttpsGetMock,
@@ -23,6 +23,11 @@ describe('httpsGet', () => {
     beforeEach(() => {
         networkHttpsGetMock.mockReset();
         networkHttpsGetMock.mockClear();
+    });
+
+    afterEach(() => {
+        // Ensure complete cleanup after each test
+        networkHttpsGetMock.mockReset();
     });
 
     it('should parse JSON responses automatically', async () => {

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
 import { EventEmitter } from 'node:events';
 
 const unzipFromUrlMock = mock();
@@ -7,7 +7,7 @@ const writeFileMock = mock();
 const rmMock = mock();
 const indexHttpsGetMock = mock();
 
-// Mock node:https for index.test.ts with a unique mock instance
+// Mock node:https specifically for index tests
 mock.module('node:https', () => ({
     default: { get: indexHttpsGetMock },
     get: indexHttpsGetMock,
@@ -73,6 +73,11 @@ describe('index exports', () => {
         ]);
         writeFileMock.mockResolvedValue(undefined);
         rmMock.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        // Ensure complete cleanup after each test
+        indexHttpsGetMock.mockReset();
     });
 
     it('should write downloaded JSON to destination', async () => {
