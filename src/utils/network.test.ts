@@ -1,13 +1,15 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 import { EventEmitter } from 'node:events';
 
-const getMock = mock();
+const networkGetMock = mock();
 
+// Use a unique identifier to avoid conflicts
 mock.module('node:https', () => ({
-    default: { get: getMock },
-    get: getMock,
+    default: { get: networkGetMock },
+    get: networkGetMock,
 }));
 
+// Import after mocking
 const { buildUrl, httpsGet } = await import('./network');
 
 describe('buildUrl', () => {
@@ -19,18 +21,25 @@ describe('buildUrl', () => {
 
 describe('httpsGet', () => {
     beforeEach(() => {
-        getMock.mockReset();
+        networkGetMock.mockReset();
+        // Ensure clean state for each test
+        networkGetMock.mockClear();
     });
 
     it('should parse JSON responses automatically', async () => {
-        getMock.mockImplementation((_url: string, handler: (res: any) => void) => {
+        networkGetMock.mockImplementation((url: string | URL, handler: (res: any) => void) => {
             const response = new EventEmitter() as any;
             response.headers = { 'content-type': 'application/json' };
+
+            // Call handler synchronously to ensure proper setup
             handler(response);
-            setImmediate(() => {
+
+            // Use process.nextTick instead of setImmediate for more reliable timing
+            process.nextTick(() => {
                 response.emit('data', Buffer.from(JSON.stringify({ success: true })));
                 response.emit('end');
             });
+
             const request = new EventEmitter();
             return request;
         });
@@ -40,14 +49,16 @@ describe('httpsGet', () => {
     });
 
     it('should return Uint8Array for non-JSON responses', async () => {
-        getMock.mockImplementation((_url: string, handler: (res: any) => void) => {
+        networkGetMock.mockImplementation((url: string | URL, handler: (res: any) => void) => {
             const response = new EventEmitter() as any;
             response.headers = { 'content-type': 'application/octet-stream' };
             handler(response);
-            setImmediate(() => {
+
+            process.nextTick(() => {
                 response.emit('data', Buffer.from('hello'));
                 response.emit('end');
             });
+
             const request = new EventEmitter();
             return request;
         });
@@ -58,11 +69,13 @@ describe('httpsGet', () => {
     });
 
     it('should reject when request errors', async () => {
-        getMock.mockImplementation((_url: string, _handler: (res: any) => void) => {
+        networkGetMock.mockImplementation((url: string | URL, handler: (res: any) => void) => {
             const request = new EventEmitter();
-            setImmediate(() => {
+
+            process.nextTick(() => {
                 request.emit('error', new Error('network failure'));
             });
+
             return request;
         });
 
