@@ -2,6 +2,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { unzipSync } from 'fflate';
+import { httpsGet } from './network';
 
 /**
  * Representation of an extracted archive entry containing raw bytes and filename metadata.
@@ -31,7 +32,6 @@ export const createTempDir = async (prefix: string): Promise<string> => {
  * @returns A promise that resolves with the list of all extracted entries.
  */
 export const unzipFromUrl = async (url: string): Promise<UnzippedEntry[]> => {
-    const { httpsGet } = await import('./network');
     const binary = await httpsGet<Uint8Array>(url);
 
     return new Promise((resolve, reject) => {
