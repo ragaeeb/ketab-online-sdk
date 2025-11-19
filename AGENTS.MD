@@ -18,7 +18,7 @@ Welcome to the `ketab-online-sdk` repository. This document captures the convent
 
 - Use **Bun** for everything: `bun install`, `bun update --latest`, `bun run build`, and `bun test`.
 - Builds are powered by **tsdown**. Keep its configuration aligned with the latest [tsdown docs](https://github.com/rolldown/tsdown) and make sure the bundle targets modern Node runtimes.
-- **Biome** handles formatting and linting. Run `bun run lint` (or `bun run format`) before committing. The formatter is configured for 4-space indentation and a max width of 110 columns.
+- **Biome** handles formatting and linting. Run `bun run lint` (or `bun run format`) before committing. The formatter is configured for 4-space indentation and a max width of 120 columns.
 - `bun test` runs the entire unit suite. Add focused tests for each exported helper and keep mocks inside the corresponding test files.
 - Long-running or networked tests should go under `testing/` and default to `test.skip` unless explicitly requested.
 

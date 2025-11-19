@@ -31,7 +31,8 @@ describe('httpsGet', () => {
                 response.emit('data', Buffer.from(JSON.stringify({ success: true })));
                 response.emit('end');
             });
-            return { on: () => undefined };
+            const request = new EventEmitter();
+            return request;
         });
 
         const result = await httpsGet('https://example.com');
@@ -47,7 +48,8 @@ describe('httpsGet', () => {
                 response.emit('data', Buffer.from('hello'));
                 response.emit('end');
             });
-            return { on: () => undefined };
+            const request = new EventEmitter();
+            return request;
         });
 
         const result = await httpsGet('https://example.com');

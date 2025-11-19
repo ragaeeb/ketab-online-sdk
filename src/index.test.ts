@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
+import { EventEmitter } from 'node:events';
 
 const unzipFromUrlMock = mock();
 const createTempDirMock = mock();
@@ -51,19 +52,15 @@ describe('index exports', () => {
 
         // Mock https.get to return JSON responses
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() => cb(Buffer.from(JSON.stringify({ code: 404 }))));
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit('data', Buffer.from(JSON.stringify({ code: 404 })));
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         createTempDirMock.mockResolvedValue(tempDirPath);
@@ -95,21 +92,18 @@ describe('index exports', () => {
 
     it('should return author data when response code is 200', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() =>
-                            cb(Buffer.from(JSON.stringify({ code: 200, data: { name: 'Author', nullKey: null } }))),
-                        );
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit(
+                    'data',
+                    Buffer.from(JSON.stringify({ code: 200, data: { name: 'Author', nullKey: null } })),
+                );
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         await expect(getAuthorInfo(3)).resolves.toMatchObject({ name: 'Author' });
@@ -117,19 +111,15 @@ describe('index exports', () => {
 
     it('should throw when author is missing', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() => cb(Buffer.from(JSON.stringify({ code: 404 }))));
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit('data', Buffer.from(JSON.stringify({ code: 404 })));
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         await expect(getAuthorInfo(3)).rejects.toThrow('Author 3 not found');
@@ -137,28 +127,23 @@ describe('index exports', () => {
 
     it('should return array of authors', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() =>
-                            cb(
-                                Buffer.from(
-                                    JSON.stringify({
-                                        code: 200,
-                                        data: [{ empty: '', name: 'Author One' }, { name: 'Author Two' }],
-                                    }),
-                                ),
-                            ),
-                        );
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit(
+                    'data',
+                    Buffer.from(
+                        JSON.stringify({
+                            code: 200,
+                            data: [{ empty: '', name: 'Author One' }, { name: 'Author Two' }],
+                        }),
+                    ),
+                );
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         const result = await getAuthors({ page: 1 });
@@ -168,21 +153,18 @@ describe('index exports', () => {
 
     it('should return sanitized book information', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() =>
-                            cb(Buffer.from(JSON.stringify({ code: 200, data: { emptyKey: '', title: 'Book' } }))),
-                        );
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit(
+                    'data',
+                    Buffer.from(JSON.stringify({ code: 200, data: { emptyKey: '', title: 'Book' } })),
+                );
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         await expect(getBookInfo(42)).resolves.toMatchObject({ title: 'Book' });
@@ -206,21 +188,15 @@ describe('index exports', () => {
             { id: 2, page: 10, parent: 0, title: 'Chapter 2' },
         ];
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() =>
-                            cb(Buffer.from(JSON.stringify({ code: 200, data: indexData, status: true }))),
-                        );
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit('data', Buffer.from(JSON.stringify({ code: 200, data: indexData, status: true })));
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         const result = await getBookIndex(67768);
@@ -239,21 +215,15 @@ describe('index exports', () => {
             },
         ];
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() =>
-                            cb(Buffer.from(JSON.stringify({ code: 200, data: indexData, status: true }))),
-                        );
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit('data', Buffer.from(JSON.stringify({ code: 200, data: indexData, status: true })));
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         const result = await getBookIndex(67768, { isRecursive: true });
@@ -263,19 +233,15 @@ describe('index exports', () => {
 
     it('should throw when book index not found', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() => cb(Buffer.from(JSON.stringify({ code: 404 }))));
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit('data', Buffer.from(JSON.stringify({ code: 404 })));
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         await expect(getBookIndex(999)).rejects.toThrow('Book 999 not found');
@@ -283,31 +249,26 @@ describe('index exports', () => {
 
     it('should unwrap array data for successful book queries', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() =>
-                            cb(
-                                Buffer.from(
-                                    JSON.stringify({
-                                        code: 200,
-                                        data: [
-                                            { empty: '', title: 'One' },
-                                            { nested: { drop: null, keep: 'value' }, title: 'Two' },
-                                        ],
-                                    }),
-                                ),
-                            ),
-                        );
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit(
+                    'data',
+                    Buffer.from(
+                        JSON.stringify({
+                            code: 200,
+                            data: [
+                                { empty: '', title: 'One' },
+                                { nested: { drop: null, keep: 'value' }, title: 'Two' },
+                            ],
+                        }),
+                    ),
+                );
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         const result = await getBooks({ page: 2, query: 'history' });
@@ -317,28 +278,23 @@ describe('index exports', () => {
 
     it('should return array of categories', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() =>
-                            cb(
-                                Buffer.from(
-                                    JSON.stringify({
-                                        code: 200,
-                                        data: [{ empty: '', name: 'Category One' }, { name: 'Category Two' }],
-                                    }),
-                                ),
-                            ),
-                        );
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit(
+                    'data',
+                    Buffer.from(
+                        JSON.stringify({
+                            code: 200,
+                            data: [{ empty: '', name: 'Category One' }, { name: 'Category Two' }],
+                        }),
+                    ),
+                );
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         const result = await getCategories({ limit: 40 });
@@ -348,21 +304,18 @@ describe('index exports', () => {
 
     it('should return sanitized category information', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() =>
-                            cb(Buffer.from(JSON.stringify({ code: 200, data: { empty: '', name: 'Category' } }))),
-                        );
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit(
+                    'data',
+                    Buffer.from(JSON.stringify({ code: 200, data: { empty: '', name: 'Category' } })),
+                );
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         await expect(getCategoryInfo(9)).resolves.toMatchObject({ name: 'Category' });
@@ -370,19 +323,15 @@ describe('index exports', () => {
 
     it('should throw when category not found', async () => {
         getMock.mockImplementation((_url: any, handler: (res: any) => void) => {
-            const response: any = {
-                headers: { 'content-type': 'application/json' },
-                on: (event: string, cb: Function) => {
-                    if (event === 'data') {
-                        setImmediate(() => cb(Buffer.from(JSON.stringify({ code: 404 }))));
-                    }
-                    if (event === 'end') {
-                        setImmediate(() => cb());
-                    }
-                },
-            };
+            const response = new EventEmitter() as any;
+            response.headers = { 'content-type': 'application/json' };
             handler(response);
-            return { on: () => undefined };
+            setImmediate(() => {
+                response.emit('data', Buffer.from(JSON.stringify({ code: 404 })));
+                response.emit('end');
+            });
+            const request = new EventEmitter();
+            return request;
         });
 
         await expect(getCategoryInfo(9)).rejects.toThrow('Category 9 not found');

@@ -1,4 +1,26 @@
 /**
+ * Common query parameters for paginated API requests.
+ */
+export type RequestOptions = {
+    /** Filter by active status (0 or 1) */
+    is_active?: number;
+    /** Filter by deletion status (0 or 1) */
+    is_deleted?: number;
+    /** Maximum number of results per page */
+    limit?: number;
+    /** Page number for pagination */
+    page?: number;
+    /** Search query string */
+    query?: string;
+    /** Scope of the search */
+    scope?: QueryScope;
+    /** Sort direction */
+    sort_direction?: SortDirection;
+    /** Field to sort by */
+    sort_field?: string;
+};
+
+/**
  * Scope for filtering search results.
  */
 export enum QueryScope {
@@ -285,75 +307,9 @@ export interface BookIndexOptions {
 }
 
 /**
- * Query parameters for fetching authors.
- */
-export type AuthorRequestOptions = {
-    /** Filter by active status (0 or 1) */
-    is_active?: number;
-    /** Filter by deletion status (0 or 1) */
-    is_deleted?: number;
-    /** Maximum number of results per page */
-    limit?: number;
-    /** Page number for pagination */
-    page?: number;
-    /** Search query string */
-    query?: string;
-    /** Scope of the search */
-    scope?: QueryScope;
-    /** Sort direction */
-    sort_direction?: SortDirection;
-    /** Field to sort by */
-    sort_field?: string;
-};
-
-/**
- * Query parameters for fetching books.
- */
-export type BookRequestOptions = {
-    /** Filter by active status (0 or 1) */
-    is_active?: number;
-    /** Filter by deletion status (0 or 1) */
-    is_deleted?: number;
-    /** Maximum number of results per page */
-    limit?: number;
-    /** Page number for pagination */
-    page?: number;
-    /** Search query string */
-    query?: string;
-    /** Scope of the search */
-    scope?: QueryScope;
-    /** Sort direction */
-    sort_direction?: SortDirection;
-    /** Field to sort by */
-    sort_field?: string;
-};
-
-/**
- * Query parameters for fetching categories.
- */
-export type CategoryRequestOptions = {
-    /** Filter by active status (0 or 1) */
-    is_active?: number;
-    /** Filter by deletion status (0 or 1) */
-    is_deleted?: number;
-    /** Maximum number of results per page */
-    limit?: number;
-    /** Page number for pagination */
-    page?: number;
-    /** Search query string */
-    query?: string;
-    /** Scope of the search */
-    scope?: QueryScope;
-    /** Sort direction */
-    sort_direction?: SortDirection;
-    /** Field to sort by */
-    sort_field?: string;
-};
-
-/**
  * Basic author reference with ID and name.
  */
-type Author = {
+export type Author = {
     /** Unique identifier for the author */
     id: number;
     /** Author name */
@@ -363,7 +319,7 @@ type Author = {
 /**
  * Basic category reference with ID and name.
  */
-type Category = {
+export type Category = {
     /** Unique identifier for the category */
     id: number;
     /** Category name */
@@ -457,7 +413,7 @@ type PartReference = {
 /**
  * Individual page content in a book.
  */
-type Page = {
+export type Page = {
     /** Page content text */
     content: string;
     /** Hadith metadata (if the page contains hadith) */

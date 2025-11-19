@@ -40,7 +40,10 @@ const cleanObject = (obj: Record<string, any>): Record<string, any> => {
 
 /**
  * Removes falsy values from an object or array, recursively cleaning nested objects.
- *
+ * Note: This removes ALL falsy values including 0, false, '', null, undefined, and NaN.
+ * If you need to preserve 0 or false, consider a different approach.
+
+ * 
  * @param obj - The value to clean.
  * @returns A new instance containing only truthy values.
  */

@@ -33,16 +33,13 @@ export const createTempDir = async (prefix: string): Promise<string> => {
  */
 export const unzipFromUrl = async (url: string): Promise<UnzippedEntry[]> => {
     const binary = await httpsGet<Uint8Array>(url);
+    const dataToUnzip = binary instanceof Uint8Array ? binary : new Uint8Array(binary as ArrayBufferLike);
 
-    return new Promise((resolve, reject) => {
-        const dataToUnzip = binary instanceof Uint8Array ? binary : new Uint8Array(binary as ArrayBufferLike);
-
-        try {
-            const result = unzipSync(dataToUnzip);
-            const entries = Object.entries(result).map(([name, data]) => ({ data, name }));
-            resolve(entries);
-        } catch (error: any) {
-            reject(new Error(`Error processing URL: ${error.message}`));
-        }
-    });
+    try {
+        const result = unzipSync(dataToUnzip);
+        const entries = Object.entries(result).map(([name, data]) => ({ data, name }));
+        return entries;
+    } catch (error: any) {
+        throw new Error(`Error processing URL: ${error.message}`);
+    }
 };

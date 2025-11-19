@@ -3,15 +3,13 @@ import fs from 'node:fs/promises';
 import type {
     ApiResponse,
     AuthorInfo,
-    AuthorRequestOptions,
     BookContents,
     BookIndexEntry,
     BookIndexOptions,
     BookIndexResponse,
     BookInfo,
-    BookRequestOptions,
     CategoryInfo,
-    CategoryRequestOptions,
+    RequestOptions,
 } from './types';
 import { removeFalsyValues } from './utils/common';
 import { createTempDir, unzipFromUrl } from './utils/io';
@@ -46,10 +44,12 @@ export const downloadBook = async (id: number, outputFile: string): Promise<stri
         throw new Error('No JSON file found in downloaded archive');
     }
 
-    await fs.writeFile(outputFile, jsonEntry.data);
-    await fs.rm(outputDir, { recursive: true });
-
-    return outputFile;
+    try {
+        await fs.writeFile(outputFile, jsonEntry.data);
+        return outputFile;
+    } finally {
+        await fs.rm(outputDir, { recursive: true });
+    }
 };
 
 /**
@@ -79,7 +79,7 @@ export const getAuthorInfo = async (id: number): Promise<AuthorInfo> => {
  * @param options - Optional query and pagination parameters.
  * @returns A promise that resolves with the matching authors.
  */
-export const getAuthors = async ({ query, ...options }: AuthorRequestOptions = {}): Promise<AuthorInfo[]> => {
+export const getAuthors = async ({ query, ...options }: RequestOptions = {}): Promise<AuthorInfo[]> => {
     const url = buildUrl(`https://backend.ketabonline.com/api/v2/authors`, {
         ...options,
         ...(query && { q: query }),
@@ -109,10 +109,12 @@ export const getBookContents = async (id: number): Promise<BookContents> => {
         throw new Error('No JSON file found in downloaded archive');
     }
 
-    const data = JSON.parse(new TextDecoder().decode(jsonEntry.data)) as BookContents;
-    await fs.rm(outputDir, { recursive: true });
-
-    return data;
+    try {
+        const data = JSON.parse(new TextDecoder().decode(jsonEntry.data)) as BookContents;
+        return data;
+    } finally {
+        await fs.rm(outputDir, { recursive: true });
+    }
 };
 
 /**
@@ -180,7 +182,7 @@ export const getBookInfo = async (id: number): Promise<BookInfo> => {
  * @param options - Optional query and pagination parameters.
  * @returns A promise that resolves with the matching books.
  */
-export const getBooks = async ({ query, ...options }: BookRequestOptions = {}): Promise<BookInfo[]> => {
+export const getBooks = async ({ query, ...options }: RequestOptions = {}): Promise<BookInfo[]> => {
     const url = buildUrl(`https://backend.ketabonline.com/api/v2/books`, { ...options, ...(query && { q: query }) });
     const response: ApiResponse = await httpsGet<ApiResponse>(url);
 
@@ -198,7 +200,7 @@ export const getBooks = async ({ query, ...options }: BookRequestOptions = {}): 
  * @param options - Optional query and pagination parameters.
  * @returns A promise that resolves with the matching categories.
  */
-export const getCategories = async ({ query, ...options }: CategoryRequestOptions = {}): Promise<CategoryInfo[]> => {
+export const getCategories = async ({ query, ...options }: RequestOptions = {}): Promise<CategoryInfo[]> => {
     const url = buildUrl(`https://backend.ketabonline.com/api/v2/categories`, {
         ...options,
         ...(query && { q: query }),
