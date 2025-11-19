@@ -1,10 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, mock, test } from 'bun:test';
+import { EventEmitter } from 'node:events';
+import { getAuthorInfo, getBookInfo, getCategoryInfo, getBookContents, getBooks } from '../src/index';
 
-import { getAuthorInfo, getBookContents, getBookInfo, getBooks, getCategoryInfo } from '../src/index';
+mock.module('unzipper', () => ({
+    default: { Parse: () => new EventEmitter() },
+    Parse: () => new EventEmitter(),
+}));
 
-describe('e2e', () => {
+const e2eDescribe = process.env.RUN_E2E === 'true' ? describe : describe.skip;
+
+
+e2eDescribe('e2e', () => {
     describe('getBookInfo', () => {
-        it(
+        test(
             'should get book information',
             async () => {
                 const book = await getBookInfo(41768);
@@ -69,12 +77,12 @@ describe('e2e', () => {
                     title: 'رسائل التوبة من التدخين',
                     updated_at: expect.any(String),
                     views: expect.any(Number),
-                });
+                } as any);
             },
             { timeout: 5000 },
         );
 
-        it(
+        test(
             'should handle 404',
             async () => {
                 await expect(getBookInfo(10000)).rejects.toThrow('Book 10000 not found');
@@ -84,7 +92,7 @@ describe('e2e', () => {
     });
 
     describe('getAuthorInfo', () => {
-        it('should get the author data', async () => {
+        test('should get the author data', async () => {
             const result = await getAuthorInfo(2);
             expect(result).toEqual(
                 expect.objectContaining({
@@ -101,7 +109,7 @@ describe('e2e', () => {
     });
 
     describe('getCategoryInfo', () => {
-        it('should get the category data', async () => {
+        test('should get the category data', async () => {
             const result = await getCategoryInfo(2);
             expect(result).toEqual(
                 expect.objectContaining({
@@ -117,7 +125,7 @@ describe('e2e', () => {
     });
 
     describe('getBookContents', () => {
-        it('should get the book data', async () => {
+        test('should get the book data', async () => {
             const result = await getBookContents(27018);
             expect(result).toEqual(
                 expect.objectContaining({
@@ -136,7 +144,7 @@ describe('e2e', () => {
     });
 
     describe('getBooks', () => {
-        it('should get the list of books', async () => {
+        test('should get the list of books', async () => {
             const books = await getBooks({ limit: 2, query: 'موسوعة' });
             expect(books).toHaveLength(2);
         });

@@ -1,23 +1,62 @@
-import { promises as fs } from 'fs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, mock } from 'bun:test';
 
-import { createTempDir, unzipFromUrl } from './io';
+const mkdtempMock = mock();
+const httpsGetMock = mock();
+const unzipSyncMock = mock();
+
+mock.module('node:fs', () => ({
+    default: {
+        promises: {
+            mkdtemp: mkdtempMock,
+        },
+    },
+    promises: {
+        mkdtemp: mkdtempMock,
+    },
+}));
+
+mock.module('node:https', () => ({
+    default: { get: mock() },
+    get: mock(),
+}));
+
+mock.module('./network', () => ({
+    buildUrl: (endpoint: string, params: Record<string, string | number>) => {
+        const url = new URL(endpoint);
+        Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value.toString()));
+        return url;
+    },
+    httpsGet: httpsGetMock,
+}));
+
+mock.module('fflate', () => ({
+    unzipSync: unzipSyncMock,
+}));
+
+const { unzipFromUrl } = await import('./io');
 
 describe('io', () => {
     describe('unzipFromUrl', () => {
-        it(
-            'should unzip the remote zip file into the folder',
-            async () => {
-                const tempDir = await createTempDir('ketabonline');
-                const files = await unzipFromUrl(
-                    'https://thetestdata.com/samplefiles/zip/Thetestdata_ZIP_5KB.zip',
-                    tempDir,
-                );
+        beforeEach(() => {
+            httpsGetMock.mockReset();
+            unzipSyncMock.mockReset();
+        });
 
-                expect(files).toHaveLength(10);
-                await fs.rm(tempDir, { recursive: true });
-            },
-            { timeout: 10000 },
-        );
+        it('should return unzipped entries from successful download', async () => {
+            const mockData = new Uint8Array([1, 2, 3]);
+            httpsGetMock.mockResolvedValue(mockData);
+            unzipSyncMock.mockReturnValue({
+                'book.json': new Uint8Array([123, 34, 102, 111, 111, 34, 58, 34, 98, 97, 114, 34, 125]),
+            });
+
+            const result = await unzipFromUrl('https://example.com/archive.zip');
+
+            expect(result).toEqual([
+                {
+                    data: new Uint8Array([123, 34, 102, 111, 111, 34, 58, 34, 98, 97, 114, 34, 125]),
+                    name: 'book.json',
+                },
+            ]);
+        });
     });
 });

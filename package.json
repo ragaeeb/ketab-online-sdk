@@ -1,60 +1,58 @@
 {
-    "name": "ketab-online-sdk",
-    "description": "JavaScript SDK for accessing ketabonline.com books",
-    "version": "1.1.0",
     "author": "Ragaeeb Haq",
-    "license": "MIT",
-    "private": false,
-    "main": "dist/main.js",
-    "types": "dist/index.d.ts",
-    "source": "src/index.ts",
-    "type": "module",
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/ragaeeb/ketab-online-sdk.git"
+    "dependencies": {
+        "fflate": "^0.8.2"
+    },
+    "description": "JavaScript SDK for accessing ketabonline.com books",
+    "devDependencies": {
+        "@biomejs/biome": "^2.3.6",
+        "@semantic-release/changelog": "^6.0.3",
+        "@semantic-release/git": "^10.0.1",
+        "@types/bun": "^1.3.2",
+        "@types/node": "^24.10.1",
+        "semantic-release": "^25.0.2",
+        "tsdown": "^0.16.5",
+        "typescript": "^5.9.3"
     },
     "engines": {
-        "node": ">=23.0.0"
+        "bun": ">=1.3.2",
+        "node": ">=24.0.0"
+    },
+    "exports": {
+        ".": {
+            "default": "./dist/index.mjs",
+            "types": "./dist/index.d.mts"
+        },
+        "./package.json": "./package.json"
     },
     "files": [
-        "dist/main.js",
-        "dist/main.js.map",
-        "dist/*.d.ts"
+        "dist",
+        "README.md",
+        "LICENSE.MD"
     ],
-    "scripts": {
-        "watch": "parcel watch",
-        "build": "parcel build",
-        "test": "vitest run --coverage",
-        "e2e": "vitest run --config vitest.e2e.config.ts"
-    },
     "keywords": [
         "ketabonline.com",
         "arabic",
         "islamic"
     ],
-    "devDependencies": {
-        "@eslint/js": "^9.20.0",
-        "@parcel/packager-ts": "^2.13.3",
-        "@parcel/transformer-typescript-types": "^2.13.3",
-        "@semantic-release/changelog": "^6.0.3",
-        "@semantic-release/git": "^10.0.1",
-        "@types/node": "^22.13.4",
-        "@types/unzipper": "^0.10.10",
-        "@vitest/coverage-v8": "^3.0.6",
-        "eslint": "^9.20.1",
-        "eslint-config-prettier": "^10.0.1",
-        "eslint-plugin-perfectionist": "^4.9.0",
-        "eslint-plugin-prettier": "^5.2.3",
-        "eslint-plugin-vitest": "^0.5.4",
-        "eslint-plugin-vitest-globals": "^1.5.0",
-        "parcel": "^2.13.3",
-        "prettier": "^3.5.1",
-        "semantic-release": "^24.2.3",
-        "typescript": "^5.7.3",
-        "typescript-eslint": "^8.24.1",
-        "vitest": "^3.0.6"
+    "license": "MIT",
+    "main": "dist/index.mjs",
+    "name": "ketab-online-sdk",
+    "packageManager": "bun@1.3.2",
+    "private": false,
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/ragaeeb/ketab-online-sdk.git"
     },
-    "dependencies": {
-        "unzipper": "^0.12.3"
-    }
+    "scripts": {
+        "build": "tsdown",
+        "e2e": "RUN_E2E=true bun test testing/e2e.test.ts",
+        "format": "biome format .",
+        "lint": "biome check .",
+        "test": "bun test"
+    },
+    "source": "src/index.ts",
+    "type": "module",
+    "types": "dist/index.d.mts",
+    "version": "1.2.0"
 }
