@@ -1,36 +1,36 @@
-import { describe, expect, test } from 'bun:test';
+import { describe, expect, it } from 'bun:test';
 
 import { removeFalsyValues } from './common';
 
 describe('removeFalsyValues', () => {
-    test('cleans nested objects and arrays', () => {
+    it('should clean nested objects and arrays', () => {
         const input = {
-            nested: {
-                valid: 'value',
-                nestedArray: [1, { keep: 'yes', drop: undefined }],
-            },
             list: [
                 {
-                    keep: 'value',
                     drop: '',
+                    keep: 'value',
                 },
                 undefined,
             ],
+            nested: {
+                nestedArray: [1, { drop: undefined, keep: 'yes' }],
+                valid: 'value',
+            },
         };
 
         const result = removeFalsyValues(input);
 
         expect(result).toEqual({
-            nested: {
-                valid: 'value',
-                nestedArray: [1, { keep: 'yes' }],
-            },
             list: [{ keep: 'value' }],
+            nested: {
+                nestedArray: [1, { keep: 'yes' }],
+                valid: 'value',
+            },
         });
     });
 
-    test('cleans array values', () => {
-        const result = removeFalsyValues(['', 'value', undefined, { keep: 'value', drop: '' }]);
+    it('should clean array values', () => {
+        const result = removeFalsyValues(['', 'value', undefined, { drop: '', keep: 'value' }]);
         expect(result).toEqual(['value', { keep: 'value' }]);
     });
 });

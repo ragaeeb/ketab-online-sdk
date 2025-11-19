@@ -231,6 +231,60 @@ export interface BookInfo {
 }
 
 /**
+ * Book index entry representing a table of contents item.
+ */
+export interface BookIndexEntry {
+    /** Unique identifier for the book */
+    book_id: number;
+    /** Child index entries (if is_recursive is enabled) */
+    children?: BookIndexEntry[];
+    /** Unique identifier for the index entry */
+    id: number;
+    /** Display order priority */
+    order: number;
+    /** Page number where this entry appears */
+    page: number;
+    /** Internal page identifier */
+    page_id: number;
+    /** Paragraph identifier within the page */
+    paragraph_id: number | null;
+    /** Parent index entry ID (0 for top-level entries) */
+    parent: number;
+    /** Name of the part or volume */
+    part_name: string;
+    /** Audio reciters for this entry (if any) */
+    reciters: any[];
+    /** Title of the index entry */
+    title: string;
+    /** Heading level (1 = top level, 2+ = nested) */
+    title_level: number;
+    /** Ending page number for this section */
+    to_page_id: number;
+}
+
+/**
+ * Response structure for book index queries.
+ */
+export interface BookIndexResponse {
+    /** HTTP status code */
+    code: number;
+    /** Array of index entries */
+    data: BookIndexEntry[];
+    /** Whether the request succeeded */
+    status: boolean;
+}
+
+/**
+ * Options for querying book index.
+ */
+export interface BookIndexOptions {
+    /** Whether to return hierarchical structure with children (default: false) */
+    isRecursive?: boolean;
+    /** Part number to filter by (default: 1) */
+    part?: number;
+}
+
+/**
  * Query parameters for fetching authors.
  */
 export type AuthorRequestOptions = {
