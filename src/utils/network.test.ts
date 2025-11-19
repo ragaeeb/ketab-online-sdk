@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 import { EventEmitter } from 'node:events';
 
-const networkGetMock = mock();
+const networkHttpsGetMock = mock();
 
-// Use a unique identifier to avoid conflicts
+// Mock node:https for network.test.ts only
 mock.module('node:https', () => ({
-    default: { get: networkGetMock },
-    get: networkGetMock,
+    default: { get: networkHttpsGetMock },
+    get: networkHttpsGetMock,
 }));
 
 // Import after mocking
@@ -21,20 +21,17 @@ describe('buildUrl', () => {
 
 describe('httpsGet', () => {
     beforeEach(() => {
-        networkGetMock.mockReset();
-        // Ensure clean state for each test
-        networkGetMock.mockClear();
+        networkHttpsGetMock.mockReset();
+        networkHttpsGetMock.mockClear();
     });
 
     it('should parse JSON responses automatically', async () => {
-        networkGetMock.mockImplementation((url: string | URL, handler: (res: any) => void) => {
+        networkHttpsGetMock.mockImplementation((_url: string | URL, handler: (res: any) => void) => {
             const response = new EventEmitter() as any;
             response.headers = { 'content-type': 'application/json' };
 
-            // Call handler synchronously to ensure proper setup
             handler(response);
 
-            // Use process.nextTick instead of setImmediate for more reliable timing
             process.nextTick(() => {
                 response.emit('data', Buffer.from(JSON.stringify({ success: true })));
                 response.emit('end');
@@ -49,7 +46,7 @@ describe('httpsGet', () => {
     });
 
     it('should return Uint8Array for non-JSON responses', async () => {
-        networkGetMock.mockImplementation((url: string | URL, handler: (res: any) => void) => {
+        networkHttpsGetMock.mockImplementation((_url: string | URL, handler: (res: any) => void) => {
             const response = new EventEmitter() as any;
             response.headers = { 'content-type': 'application/octet-stream' };
             handler(response);
@@ -69,7 +66,7 @@ describe('httpsGet', () => {
     });
 
     it('should reject when request errors', async () => {
-        networkGetMock.mockImplementation((url: string | URL, handler: (res: any) => void) => {
+        networkHttpsGetMock.mockImplementation((_url: string | URL, _handler: (res: any) => void) => {
             const request = new EventEmitter();
 
             process.nextTick(() => {
