@@ -29,7 +29,7 @@ const {
     getBooks,
     getCategories,
     getCategoryInfo,
-} = await import('./index');
+} = await import(`./index?t=${Date.now()}`);
 
 describe('index exports', () => {
     beforeEach(() => {

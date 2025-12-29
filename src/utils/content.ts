@@ -255,17 +255,16 @@ export const indexToMarkdown = (index: IndexItem[], options: { maxDepth?: number
         }
 
         for (const item of items) {
-            const indent = '  '.repeat(depth - 1);
-            const prefix = depth === 1 ? '##' : '-';
             const pageInfo = item.part_name ? ` (Part ${item.part_name}, p. ${item.page})` : ` (p. ${item.page})`;
 
             if (depth === 1) {
-                lines.push(`${prefix} ${item.title}${pageInfo}`);
+                lines.push(`## ${item.title}${pageInfo}`);
             } else {
-                lines.push(`${indent}${prefix} ${item.title}${pageInfo}`);
+                const indent = '  '.repeat(depth - 1);
+                lines.push(`${indent}- ${item.title}${pageInfo}`);
             }
 
-            if (item.children && item.children.length > 0) {
+            if (item.children?.length) {
                 traverse(item.children, depth + 1);
             }
         }
