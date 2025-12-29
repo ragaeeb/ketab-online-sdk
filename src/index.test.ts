@@ -1,10 +1,11 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 
-const unzipFromUrlMock = mock();
+const downloadBookContentsMock = mock();
 const httpsGetMock = mock();
 
-mock.module('./utils/io', () => ({
-    unzipFromUrl: unzipFromUrlMock,
+// Mock the dedicated book module (avoids interference with io.test.ts)
+mock.module('./utils/book', () => ({
+    downloadBookContents: downloadBookContentsMock,
 }));
 
 mock.module('./utils/network', () => ({
@@ -33,7 +34,7 @@ const {
 describe('index exports', () => {
     beforeEach(() => {
         httpsGetMock.mockReset();
-        unzipFromUrlMock.mockReset();
+        downloadBookContentsMock.mockReset();
 
         // Default mock: return 404 response for httpsGet
         httpsGetMock.mockResolvedValue({ code: 404 });
@@ -70,7 +71,7 @@ describe('index exports', () => {
 
     it('should return parsed JSON book contents', async () => {
         const contents = { sections: [{ title: 'Section' }] };
-        unzipFromUrlMock.mockResolvedValue([
+        downloadBookContentsMock.mockResolvedValue([
             { data: new TextEncoder().encode(JSON.stringify(contents)), name: 'book.json' },
         ]);
 
@@ -80,7 +81,7 @@ describe('index exports', () => {
     });
 
     it('should throw when no JSON file found in book contents', async () => {
-        unzipFromUrlMock.mockResolvedValue([{ data: new Uint8Array(), name: 'other.txt' }]);
+        downloadBookContentsMock.mockResolvedValue([{ data: new Uint8Array(), name: 'other.txt' }]);
 
         await expect(getBookContents(12)).rejects.toThrow('No JSON file found in downloaded archive');
     });

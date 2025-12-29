@@ -9,9 +9,9 @@ import type {
     CategoryInfo,
     RequestOptions,
 } from './types';
+import { downloadBookContents } from './utils/book';
 import { removeFalsyValues } from './utils/common';
-import { unzipFromUrl } from './utils/io';
-import { apiUrl, BOOKS_CDN_URL, buildUrl, httpsGet } from './utils/network';
+import { apiUrl, buildUrl, httpsGet } from './utils/network';
 
 // Re-export types for consumers
 export type { IndexItem, Page } from './types';
@@ -40,17 +40,6 @@ export {
     stripFootnoteLinks,
     stripHtmlTags,
 } from './utils/content';
-
-/**
- * Downloads and parses the book contents for a given book ID.
- *
- * @param id - The ID of the book to download.
- * @returns A promise that resolves with the extracted entries.
- */
-const downloadBookContents = async (id: number) => {
-    const entries = await unzipFromUrl(`${BOOKS_CDN_URL}/${id}/${id}.data.zip`);
-    return entries;
-};
 
 /**
  * Retrieves information about the author with the given ID.
