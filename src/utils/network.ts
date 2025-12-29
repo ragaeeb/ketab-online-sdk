@@ -1,6 +1,16 @@
-import type { IncomingMessage } from 'node:http';
-import https from 'node:https';
-import { URL, URLSearchParams } from 'node:url';
+/** Base URL for the ketabonline.com backend API */
+export const API_BASE_URL = 'https://backend.ketabonline.com/api/v2';
+
+/** Base URL for the ketabonline.com books CDN */
+export const BOOKS_CDN_URL = 'https://s2.ketabonline.com/books';
+
+/**
+ * Constructs a full API URL for the given resource path.
+ *
+ * @param path - The resource path (e.g., 'authors', 'books/123').
+ * @returns The full API URL.
+ */
+export const apiUrl = (path: string): string => `${API_BASE_URL}/${path}`;
 
 /**
  * Constructs a URL by appending the provided query parameters to the endpoint.
@@ -23,39 +33,25 @@ export const buildUrl = (endpoint: string, params: Record<string, any>): URL => 
 };
 
 /**
- * Performs an HTTPS GET request and resolves with the parsed JSON body or a raw {@link Uint8Array}.
+ * Performs an HTTP GET request and resolves with the parsed JSON body or a raw {@link Uint8Array}.
+ * Uses the Fetch API for browser and modern Node.js compatibility.
  *
  * @param url - The URL to request.
  * @returns A promise resolving to the JSON payload or the binary response body.
  */
-export const httpsGet = <T extends Uint8Array | Record<string, any>>(url: string | URL): Promise<T> => {
-    return new Promise((resolve, reject) => {
-        const request = https.get(url, (res: IncomingMessage) => {
-            const contentType = res.headers['content-type'] || '';
-            const dataChunks: Buffer[] = [];
+export const httpsGet = async <T extends Uint8Array | Record<string, any>>(url: string | URL): Promise<T> => {
+    const response = await fetch(url.toString());
 
-            res.on('data', (chunk: Buffer) => {
-                dataChunks.push(chunk);
-            });
+    if (!response.ok) {
+        throw new Error(`Error making request: ${response.status} ${response.statusText}`);
+    }
 
-            res.on('end', () => {
-                const fullData = Buffer.concat(dataChunks);
+    const contentType = response.headers.get('content-type') || '';
 
-                if (contentType.toLowerCase().includes('application/json')) {
-                    try {
-                        const json = JSON.parse(fullData.toString('utf-8'));
-                        resolve(json as T);
-                    } catch (error: any) {
-                        reject(new Error(`Failed to parse JSON: ${error.message}`));
-                    }
-                } else {
-                    resolve(new Uint8Array(fullData) as T);
-                }
-            });
-        });
+    if (contentType.toLowerCase().includes('application/json')) {
+        return response.json() as Promise<T>;
+    }
 
-        request.on('error', (error) => {
-            reject(new Error(`Error making request: ${error.message}`));
-        });
-    });
+    const arrayBuffer = await response.arrayBuffer();
+    return new Uint8Array(arrayBuffer) as T;
 };

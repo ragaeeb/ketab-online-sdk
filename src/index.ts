@@ -1,5 +1,3 @@
-import fs from 'node:fs/promises';
-
 import type {
     ApiResponse,
     AuthorInfo,
@@ -11,46 +9,37 @@ import type {
     CategoryInfo,
     RequestOptions,
 } from './types';
+import { downloadBookContents } from './utils/book';
 import { removeFalsyValues } from './utils/common';
-import { createTempDir, unzipFromUrl } from './utils/io';
-import { buildUrl, httpsGet } from './utils/network';
+import { apiUrl, buildUrl, httpsGet } from './utils/network';
 
-/**
- * Downloads the book contents for a given book ID and returns the extracted entries.
- *
- * @param {number} id - The ID of the book to download.
- * @returns {Promise<{ entries: UnzippedEntry[], outputDir: string }>} A promise that resolves with the entries and output directory.
- */
-const downloadBookContents = async (id: number) => {
-    const outputDir = await createTempDir('ketabonline.com');
-    const entries = await unzipFromUrl(`https://s2.ketabonline.com/books/${id}/${id}.data.zip`);
+// Re-export types for consumers
+export type { IndexItem, Page } from './types';
+export type { Footnote } from './utils/content';
 
-    return { entries, outputDir };
-};
-
-/**
- * Downloads the book with the given ID and saves it to the specified output file.
- *
- * @param {number} id - The ID of the book to download.
- * @param {string} outputFile - The path where the book should be saved.
- * @returns {Promise<string>} A promise that resolves with the path to the output file.
- */
-export const downloadBook = async (id: number, outputFile: string): Promise<string> => {
-    const { entries, outputDir } = await downloadBookContents(id);
-    const jsonEntry = entries.find((e) => e.name.endsWith('.json'));
-
-    if (!jsonEntry) {
-        await fs.rm(outputDir, { recursive: true });
-        throw new Error('No JSON file found in downloaded archive');
-    }
-
-    try {
-        await fs.writeFile(outputFile, jsonEntry.data);
-        return outputFile;
-    } finally {
-        await fs.rm(outputDir, { recursive: true });
-    }
-};
+// Re-export content utilities
+export {
+    extractFootnotes,
+    extractPageText,
+    findIndexEntry,
+    flattenIndex,
+    getIndexBreadcrumb,
+    getPageByNumber,
+    getPagesByPart,
+    getPagesForIndex,
+    hasFootnotes,
+    htmlToMarkdown,
+    indexToMarkdown,
+    isHeaderParagraph,
+    normalizeLineEndings,
+    pagesToMarkdown,
+    pageToMarkdown,
+    pageToMarkdownWithFootnotes,
+    removeFootnoteReferences,
+    splitPageFootnotes,
+    stripFootnoteLinks,
+    stripHtmlTags,
+} from './utils/content';
 
 /**
  * Retrieves information about the author with the given ID.
@@ -60,7 +49,7 @@ export const downloadBook = async (id: number, outputFile: string): Promise<stri
  * @throws Will throw an error if the author is not found or an unknown error occurs.
  */
 export const getAuthorInfo = async (id: number): Promise<AuthorInfo> => {
-    const response: ApiResponse = await httpsGet<ApiResponse>(`https://backend.ketabonline.com/api/v2/authors/${id}`);
+    const response: ApiResponse = await httpsGet<ApiResponse>(apiUrl(`authors/${id}`));
 
     if (response.code === 404) {
         throw new Error(`Author ${id} not found`);
@@ -80,7 +69,7 @@ export const getAuthorInfo = async (id: number): Promise<AuthorInfo> => {
  * @returns A promise that resolves with the matching authors.
  */
 export const getAuthors = async ({ query, ...options }: RequestOptions = {}): Promise<AuthorInfo[]> => {
-    const url = buildUrl(`https://backend.ketabonline.com/api/v2/authors`, {
+    const url = buildUrl(apiUrl('authors'), {
         ...options,
         ...(query && { q: query }),
     });
@@ -101,20 +90,15 @@ export const getAuthors = async ({ query, ...options }: RequestOptions = {}): Pr
  * @returns {Promise<BookContents>} A promise that resolves with the book contents.
  */
 export const getBookContents = async (id: number): Promise<BookContents> => {
-    const { entries, outputDir } = await downloadBookContents(id);
+    const entries = await downloadBookContents(id);
     const jsonEntry = entries.find((e) => e.name.endsWith('.json'));
 
     if (!jsonEntry) {
-        await fs.rm(outputDir, { recursive: true });
         throw new Error('No JSON file found in downloaded archive');
     }
 
-    try {
-        const data = JSON.parse(new TextDecoder().decode(jsonEntry.data)) as BookContents;
-        return data;
-    } finally {
-        await fs.rm(outputDir, { recursive: true });
-    }
+    const data = JSON.parse(new TextDecoder().decode(jsonEntry.data)) as BookContents;
+    return data;
 };
 
 /**
@@ -137,7 +121,7 @@ export const getBookIndex = async (
     id: number,
     { isRecursive = false, part = 1 }: BookIndexOptions = {},
 ): Promise<BookIndexEntry[]> => {
-    const url = buildUrl(`https://backend.ketabonline.com/api/v2/books/${id}/index`, {
+    const url = buildUrl(apiUrl(`books/${id}/index`), {
         is_recursive: isRecursive ? 1 : 0,
         part,
     });
@@ -163,7 +147,7 @@ export const getBookIndex = async (
  * @throws Will throw an error if the book is not found or an unknown error occurs.
  */
 export const getBookInfo = async (id: number): Promise<BookInfo> => {
-    const response: ApiResponse = await httpsGet<ApiResponse>(`https://backend.ketabonline.com/api/v2/books/${id}`);
+    const response: ApiResponse = await httpsGet<ApiResponse>(apiUrl(`books/${id}`));
 
     if (response.code === 404) {
         throw new Error(`Book ${id} not found`);
@@ -183,7 +167,7 @@ export const getBookInfo = async (id: number): Promise<BookInfo> => {
  * @returns A promise that resolves with the matching books.
  */
 export const getBooks = async ({ query, ...options }: RequestOptions = {}): Promise<BookInfo[]> => {
-    const url = buildUrl(`https://backend.ketabonline.com/api/v2/books`, { ...options, ...(query && { q: query }) });
+    const url = buildUrl(apiUrl('books'), { ...options, ...(query && { q: query }) });
     const response: ApiResponse = await httpsGet<ApiResponse>(url);
 
     if (response.code === 200) {
@@ -201,7 +185,7 @@ export const getBooks = async ({ query, ...options }: RequestOptions = {}): Prom
  * @returns A promise that resolves with the matching categories.
  */
 export const getCategories = async ({ query, ...options }: RequestOptions = {}): Promise<CategoryInfo[]> => {
-    const url = buildUrl(`https://backend.ketabonline.com/api/v2/categories`, {
+    const url = buildUrl(apiUrl('categories'), {
         ...options,
         ...(query && { q: query }),
     });
@@ -223,9 +207,7 @@ export const getCategories = async ({ query, ...options }: RequestOptions = {}):
  * @throws Will throw an error if the category is not found or an unknown error occurs.
  */
 export const getCategoryInfo = async (id: number): Promise<CategoryInfo> => {
-    const response: ApiResponse = await httpsGet<ApiResponse>(
-        `https://backend.ketabonline.com/api/v2/categories/${id}`,
-    );
+    const response: ApiResponse = await httpsGet<ApiResponse>(apiUrl(`categories/${id}`));
 
     if (response.code === 404) {
         throw new Error(`Category ${id} not found`);

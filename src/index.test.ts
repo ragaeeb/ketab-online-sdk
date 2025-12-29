@@ -1,34 +1,26 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
-import { EventEmitter } from 'node:events';
+import { beforeEach, describe, expect, it, mock } from 'bun:test';
 
-const unzipFromUrlMock = mock();
-const createTempDirMock = mock();
-const writeFileMock = mock();
-const rmMock = mock();
-const indexHttpsGetMock = mock();
+const downloadBookContentsMock = mock();
+const httpsGetMock = mock();
 
-// Mock node:https specifically for index tests
-mock.module('node:https', () => ({
-    default: { get: indexHttpsGetMock },
-    get: indexHttpsGetMock,
+// Mock the dedicated book module (avoids interference with io.test.ts)
+mock.module('./utils/book', () => ({
+    downloadBookContents: downloadBookContentsMock,
 }));
 
-mock.module('./utils/io', () => ({
-    createTempDir: createTempDirMock,
-    unzipFromUrl: unzipFromUrlMock,
-}));
-
-mock.module('node:fs/promises', () => ({
-    default: {
-        rm: rmMock,
-        writeFile: writeFileMock,
+mock.module('./utils/network', () => ({
+    API_BASE_URL: 'https://backend.ketabonline.com/api/v2',
+    apiUrl: (path: string) => `https://backend.ketabonline.com/api/v2${path}`,
+    BOOKS_CDN_URL: 'https://s2.ketabonline.com/books',
+    buildUrl: (endpoint: string, params: Record<string, string | number>) => {
+        const url = new URL(endpoint);
+        Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value.toString()));
+        return url;
     },
-    rm: rmMock,
-    writeFile: writeFileMock,
+    httpsGet: httpsGetMock,
 }));
 
 const {
-    downloadBook,
     getAuthorInfo,
     getAuthors,
     getBookContents,
@@ -37,87 +29,33 @@ const {
     getBooks,
     getCategories,
     getCategoryInfo,
-} = await import('./index');
+} = await import(`./index?t=${Date.now()}`);
 
 describe('index exports', () => {
-    const tempDirPath = '/tmp/ketab';
-    const jsonData = { foo: 'bar' };
-
-    const mockJsonResponse = (data: any) => {
-        indexHttpsGetMock.mockImplementation((_url: string | URL, handler: (res: any) => void) => {
-            const response = new EventEmitter() as any;
-            response.headers = { 'content-type': 'application/json' };
-            handler(response);
-            process.nextTick(() => {
-                response.emit('data', Buffer.from(JSON.stringify(data)));
-                response.emit('end');
-            });
-            const request = new EventEmitter();
-            return request;
-        });
-    };
-
     beforeEach(() => {
-        indexHttpsGetMock.mockReset();
-        unzipFromUrlMock.mockReset();
-        createTempDirMock.mockReset();
-        writeFileMock.mockReset();
-        rmMock.mockReset();
+        httpsGetMock.mockReset();
+        downloadBookContentsMock.mockReset();
 
-        // Default mock: return 404 response
-        mockJsonResponse({ code: 404 });
-
-        createTempDirMock.mockResolvedValue(tempDirPath);
-        unzipFromUrlMock.mockResolvedValue([
-            { data: new TextEncoder().encode(JSON.stringify(jsonData)), name: 'book.json' },
-        ]);
-        writeFileMock.mockResolvedValue(undefined);
-        rmMock.mockResolvedValue(undefined);
-    });
-
-    afterEach(() => {
-        // Ensure complete cleanup after each test
-        indexHttpsGetMock.mockReset();
-    });
-
-    it('should write downloaded JSON to destination', async () => {
-        const destination = '/books/book.json';
-
-        const result = await downloadBook(12, destination);
-
-        expect(createTempDirMock).toHaveBeenCalled();
-        expect(unzipFromUrlMock).toHaveBeenCalledWith('https://s2.ketabonline.com/books/12/12.data.zip');
-        expect(writeFileMock).toHaveBeenCalled();
-        expect(rmMock).toHaveBeenCalledWith(tempDirPath, { recursive: true });
-        expect(result).toBe(destination);
-    });
-
-    it('should throw when no JSON file found in download', async () => {
-        unzipFromUrlMock.mockResolvedValue([{ data: new Uint8Array(), name: 'other.txt' }]);
-
-        await expect(downloadBook(12, '/books/book.json')).rejects.toThrow('No JSON file found in downloaded archive');
-        expect(rmMock).toHaveBeenCalled();
+        // Default mock: return 404 response for httpsGet
+        httpsGetMock.mockResolvedValue({ code: 404 });
     });
 
     it('should return author data when response code is 200', async () => {
-        mockJsonResponse({ code: 200, data: { name: 'Author', nullKey: null } });
+        httpsGetMock.mockResolvedValue({ code: 200, data: { name: 'Author', nullKey: null } });
 
         await expect(getAuthorInfo(3)).resolves.toMatchObject({ name: 'Author' });
     });
 
     it('should throw when author is missing', async () => {
-        mockJsonResponse({ code: 404 });
+        httpsGetMock.mockResolvedValue({ code: 404 });
 
         await expect(getAuthorInfo(3)).rejects.toThrow('Author 3 not found');
     });
 
     it('should return array of authors', async () => {
-        mockJsonResponse({
+        httpsGetMock.mockResolvedValue({
             code: 200,
-            data: [
-                { empty: '', name: 'Author One' },
-                { name: 'Author Two' },
-            ],
+            data: [{ empty: '', name: 'Author One' }, { name: 'Author Two' }],
         });
 
         const result = await getAuthors({ page: 1 });
@@ -126,21 +64,26 @@ describe('index exports', () => {
     });
 
     it('should return sanitized book information', async () => {
-        mockJsonResponse({ code: 200, data: { emptyKey: '', title: 'Book' } });
+        httpsGetMock.mockResolvedValue({ code: 200, data: { emptyKey: '', title: 'Book' } });
 
         await expect(getBookInfo(42)).resolves.toMatchObject({ title: 'Book' });
     });
 
     it('should return parsed JSON book contents', async () => {
         const contents = { sections: [{ title: 'Section' }] };
-        unzipFromUrlMock.mockResolvedValue([
+        downloadBookContentsMock.mockResolvedValue([
             { data: new TextEncoder().encode(JSON.stringify(contents)), name: 'book.json' },
         ]);
 
         const result = await getBookContents(7);
 
-        expect(rmMock).toHaveBeenCalledWith(tempDirPath, { recursive: true });
         expect(result).toMatchObject(contents);
+    });
+
+    it('should throw when no JSON file found in book contents', async () => {
+        downloadBookContentsMock.mockResolvedValue([{ data: new Uint8Array(), name: 'other.txt' }]);
+
+        await expect(getBookContents(12)).rejects.toThrow('No JSON file found in downloaded archive');
     });
 
     it('should return flat book index when isRecursive is false', async () => {
@@ -148,7 +91,7 @@ describe('index exports', () => {
             { id: 1, page: 1, parent: 0, title: 'Chapter 1' },
             { id: 2, page: 10, parent: 0, title: 'Chapter 2' },
         ];
-        mockJsonResponse({ code: 200, data: indexData, status: true });
+        httpsGetMock.mockResolvedValue({ code: 200, data: indexData, status: true });
 
         const result = await getBookIndex(67768);
 
@@ -165,7 +108,7 @@ describe('index exports', () => {
                 title: 'Chapter 1',
             },
         ];
-        mockJsonResponse({ code: 200, data: indexData, status: true });
+        httpsGetMock.mockResolvedValue({ code: 200, data: indexData, status: true });
 
         const result = await getBookIndex(67768, { isRecursive: true });
 
@@ -173,13 +116,13 @@ describe('index exports', () => {
     });
 
     it('should throw when book index not found', async () => {
-        mockJsonResponse({ code: 404 });
+        httpsGetMock.mockResolvedValue({ code: 404 });
 
         await expect(getBookIndex(999)).rejects.toThrow('Book 999 not found');
     });
 
     it('should unwrap array data for successful book queries', async () => {
-        mockJsonResponse({
+        httpsGetMock.mockResolvedValue({
             code: 200,
             data: [
                 { empty: '', title: 'One' },
@@ -193,12 +136,9 @@ describe('index exports', () => {
     });
 
     it('should return array of categories', async () => {
-        mockJsonResponse({
+        httpsGetMock.mockResolvedValue({
             code: 200,
-            data: [
-                { empty: '', name: 'Category One' },
-                { name: 'Category Two' },
-            ],
+            data: [{ empty: '', name: 'Category One' }, { name: 'Category Two' }],
         });
 
         const result = await getCategories({ limit: 40 });
@@ -207,13 +147,13 @@ describe('index exports', () => {
     });
 
     it('should return sanitized category information', async () => {
-        mockJsonResponse({ code: 200, data: { empty: '', name: 'Category' } });
+        httpsGetMock.mockResolvedValue({ code: 200, data: { empty: '', name: 'Category' } });
 
         await expect(getCategoryInfo(9)).resolves.toMatchObject({ name: 'Category' });
     });
 
     it('should throw when category not found', async () => {
-        mockJsonResponse({ code: 404 });
+        httpsGetMock.mockResolvedValue({ code: 404 });
 
         await expect(getCategoryInfo(9)).rejects.toThrow('Category 9 not found');
     });
