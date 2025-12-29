@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from 'bun:test';
 import { EventEmitter } from 'node:events';
-import { getAuthorInfo, getBookInfo, getCategoryInfo, getBookContents, getBooks } from '../src/index';
+import { getAuthorInfo, getBookContents, getBookInfo, getBooks, getCategoryInfo } from '../src/index';
 
 mock.module('unzipper', () => ({
     default: { Parse: () => new EventEmitter() },
@@ -8,7 +8,6 @@ mock.module('unzipper', () => ({
 }));
 
 const e2eDescribe = process.env.RUN_E2E === 'true' ? describe : describe.skip;
-
 
 e2eDescribe('e2e', () => {
     describe('getBookInfo', () => {
@@ -85,7 +84,7 @@ e2eDescribe('e2e', () => {
         test(
             'should handle 404',
             async () => {
-                await expect(getBookInfo(10000)).rejects.toThrow('Book 10000 not found');
+                await expect(getBookInfo(10000)).rejects.toThrow('Error making request: 404 Not Found');
             },
             { timeout: 5000 },
         );
@@ -113,12 +112,12 @@ e2eDescribe('e2e', () => {
             const result = await getCategoryInfo(2);
             expect(result).toEqual(
                 expect.objectContaining({
-                    name: 'التفاسير',
-                    image_url: expect.any(String),
-                    created_at: '2019-10-24 10:57:53',
-                    is_active: 1,
                     books_count: expect.any(Number),
+                    created_at: '2019-10-24 10:57:53',
+                    image_url: expect.any(String),
+                    is_active: 1,
                     lang: 'ar',
+                    name: 'التفاسير',
                 }),
             );
         });

@@ -44,8 +44,8 @@ export {
 /**
  * Downloads and parses the book contents for a given book ID.
  *
- * @param {number} id - The ID of the book to download.
- * @returns {Promise<UnzippedEntry[]>} A promise that resolves with the extracted entries.
+ * @param id - The ID of the book to download.
+ * @returns A promise that resolves with the extracted entries.
  */
 const downloadBookContents = async (id: number) => {
     const entries = await unzipFromUrl(`${BOOKS_CDN_URL}/${id}/${id}.data.zip`);

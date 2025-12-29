@@ -8,6 +8,9 @@ mock.module('./utils/io', () => ({
 }));
 
 mock.module('./utils/network', () => ({
+    API_BASE_URL: 'https://backend.ketabonline.com/api/v2',
+    apiUrl: (path: string) => `https://backend.ketabonline.com/api/v2${path}`,
+    BOOKS_CDN_URL: 'https://s2.ketabonline.com/books',
     buildUrl: (endpoint: string, params: Record<string, string | number>) => {
         const url = new URL(endpoint);
         Object.entries(params).forEach(([key, value]) => url.searchParams.append(key, value.toString()));

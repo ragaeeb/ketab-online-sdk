@@ -338,6 +338,48 @@ describe('content utilities', () => {
             },
         ];
 
+        // Deeply nested mock index (3+ levels) for testing recursive traversal
+        const deeplyNestedIndex: IndexItem[] = [
+            {
+                children: [
+                    {
+                        children: [
+                            {
+                                children: [
+                                    {
+                                        id: 4,
+                                        page: 40,
+                                        page_id: 40,
+                                        part_name: '1',
+                                        title: 'Level 4 Item',
+                                        title_level: 4,
+                                    },
+                                ],
+                                id: 3,
+                                page: 30,
+                                page_id: 30,
+                                part_name: '1',
+                                title: 'Level 3 Item',
+                                title_level: 3,
+                            },
+                        ],
+                        id: 2,
+                        page: 20,
+                        page_id: 20,
+                        part_name: '1',
+                        title: 'Level 2 Item',
+                        title_level: 2,
+                    },
+                ],
+                id: 1,
+                page: 10,
+                page_id: 10,
+                part_name: '1',
+                title: 'Level 1 Item',
+                title_level: 1,
+            },
+        ];
+
         describe('flattenIndex', () => {
             it('should flatten hierarchical index', () => {
                 const flat = flattenIndex(mockIndex);
@@ -347,6 +389,13 @@ describe('content utilities', () => {
 
             it('should handle empty index', () => {
                 expect(flattenIndex([])).toHaveLength(0);
+            });
+
+            it('should flatten deeply nested index (3+ levels)', () => {
+                const flat = flattenIndex(deeplyNestedIndex);
+                expect(flat).toHaveLength(4);
+                expect(flat.map((i) => i.id)).toEqual([1, 2, 3, 4]);
+                expect(flat.map((i) => i.title_level)).toEqual([1, 2, 3, 4]);
             });
         });
 
@@ -363,6 +412,12 @@ describe('content utilities', () => {
 
             it('should return undefined for non-existent entry', () => {
                 expect(findIndexEntry(mockIndex, 999)).toBeUndefined();
+            });
+
+            it('should find deeply nested entry (level 4)', () => {
+                const entry = findIndexEntry(deeplyNestedIndex, 4);
+                expect(entry?.title).toBe('Level 4 Item');
+                expect(entry?.title_level).toBe(4);
             });
         });
 
@@ -381,6 +436,17 @@ describe('content utilities', () => {
 
             it('should return empty array for non-existent entry', () => {
                 expect(getIndexBreadcrumb(mockIndex, 999)).toHaveLength(0);
+            });
+
+            it('should build breadcrumb for deeply nested entry (level 4)', () => {
+                const breadcrumb = getIndexBreadcrumb(deeplyNestedIndex, 4);
+                expect(breadcrumb).toHaveLength(4);
+                expect(breadcrumb.map((i) => i.title)).toEqual([
+                    'Level 1 Item',
+                    'Level 2 Item',
+                    'Level 3 Item',
+                    'Level 4 Item',
+                ]);
             });
         });
 

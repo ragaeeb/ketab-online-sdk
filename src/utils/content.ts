@@ -12,6 +12,8 @@ export const normalizeLineEndings = (text: string): string => {
 
 /**
  * Strips all HTML tags from content, keeping only text.
+ * Note: This uses a simple regex suitable for trusted ketabonline HTML.
+ * It is not a sanitizer for untrusted user input.
  *
  * @param html - HTML content
  * @returns Plain text content
@@ -401,8 +403,8 @@ export const extractFootnotes = (footerHtml: string): Footnote[] => {
     const footnoteRegex =
         /<span[^>]*id="foot-(\d+)"[^>]*class="g-footnote-target"[^>]*>\([^)]*\)<\/span>\s*([\s\S]*?)(?=<span[^>]*class="g-list"|<\/div>|$)/gi;
 
-    let match;
-    while ((match = footnoteRegex.exec(footerHtml)) !== null) {
+    const matches = footerHtml.matchAll(footnoteRegex);
+    for (const match of matches) {
         const number = parseInt(match[1]!, 10);
         const rawText = match[2] || '';
         const text = stripHtmlTags(rawText).trim();
