@@ -31,18 +31,12 @@ const {
 } = await import('./index');
 
 describe('index exports', () => {
-    const jsonData = { foo: 'bar' };
-
     beforeEach(() => {
         httpsGetMock.mockReset();
         unzipFromUrlMock.mockReset();
 
-        // Default mock: return 404 response
+        // Default mock: return 404 response for httpsGet
         httpsGetMock.mockResolvedValue({ code: 404 });
-
-        unzipFromUrlMock.mockResolvedValue([
-            { data: new TextEncoder().encode(JSON.stringify(jsonData)), name: 'book.json' },
-        ]);
     });
 
     it('should return author data when response code is 200', async () => {

@@ -30,8 +30,8 @@ describe('io', () => {
                 'book.json': new Uint8Array([123, 34, 102, 111, 111, 34, 58, 34, 98, 97, 114, 34, 125]),
             });
 
-            // Import after setting up mocks
-            const { unzipFromUrl } = await import('./io');
+            // Import with cache-busting after setting up mocks
+            const { unzipFromUrl } = await import(`./io?t=${Date.now()}`);
             const result = await unzipFromUrl('https://example.com/archive.zip');
 
             expect(result).toEqual([
