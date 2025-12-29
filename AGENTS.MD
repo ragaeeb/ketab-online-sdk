@@ -4,15 +4,28 @@ Welcome to the `ketab-online-sdk` repository. This document captures the convent
 
 ## Repository layout
 
-- `src/index.ts` exposes the public API (`downloadBook`, `getBookIndex`, `getBooks`, etc.). All TypeScript helpers must be documented with JSDoc.
+- `src/index.ts` exposes the browser-compatible public API (`getBookIndex`, `getBooks`, `getBookContents`, etc.). All TypeScript helpers must be documented with JSDoc.
+- `src/node.ts` exposes Node.js-only functions (`downloadBook`) and re-exports everything from `index.ts`. This is a separate entry point for consumers who need filesystem operations.
 - `src/types.ts` contains all TypeScript type definitions for API requests and responses.
 - `src/utils/` contains shared utilities:
   - `common.ts` – data transforms such as `removeFalsyValues`.
-  - `io.ts` – filesystem helpers (`createTempDir`, `unzipFromUrl`).
-  - `network.ts` – HTTP helpers (`httpsGet`, `buildUrl`).
+  - `io.ts` – in-memory ZIP extraction using `fflate` (`unzipFromUrl`). Browser-compatible.
+  - `network.ts` – HTTP helpers using the Fetch API (`httpsGet`, `buildUrl`). Browser-compatible.
 - `testing/e2e.test.ts` exercises the remote API. It is skipped in CI but useful for manual verification.
-- `tsdown.config.ts` defines the bundler options. Update it whenever the build target or entry points change.
+- `tsdown.config.ts` defines the bundler options with dual entry points (`src/index.ts`, `src/node.ts`).
 - Tooling configs (`biome.json`, `tsconfig.json`, `release.config.mjs`) live at the repo root.
+
+## Browser compatibility
+
+The SDK is designed to work in browsers and modern JavaScript runtimes:
+
+- **Main entry (`ketab-online-sdk`)**: Uses the Fetch API and `fflate` for in-memory ZIP extraction. No Node.js-specific APIs.
+- **Node entry (`ketab-online-sdk/node`)**: Adds `downloadBook` which requires `node:fs/promises`. Re-exports everything from the main entry for convenience.
+
+When modifying the codebase:
+- Keep `src/index.ts` free of Node.js-specific imports (`node:fs`, `node:os`, `node:path`, `node:https`, etc.)
+- Place Node.js-only functionality in `src/node.ts`
+- The `src/utils/` files should remain browser-compatible
 
 ## Tooling & workflow
 
@@ -108,11 +121,49 @@ beforeEach(() => {
 // No afterAll cleanup needed - mocks are automatically scoped
 ```
 
+## Mocking global fetch
+
+When testing code that uses `fetch()` directly (like `httpsGet` in `network.ts`), you need special handling:
+
+```typescript
+// Store original fetch
+const originalFetch = globalThis.fetch;
+
+afterEach(() => {
+    // Restore after each test
+    globalThis.fetch = originalFetch;
+});
+
+it('should handle JSON responses', async () => {
+    // Create mock BEFORE importing the module
+    globalThis.fetch = mock(async () =>
+        new Response(JSON.stringify({ success: true }), {
+            headers: { 'content-type': 'application/json' },
+        }),
+    );
+
+    // Use cache-busting query param to get fresh module import
+    const networkModule = await import('./network?test-json');
+    const result = await networkModule.httpsGet('https://example.com');
+
+    expect(result).toEqual({ success: true });
+});
+```
+
+**Key insight**: Bun caches dynamic imports. Use unique query params (e.g., `?test-name`) to bust the cache when you need a fresh module instance with different mock behavior.
+
+## Key dependencies
+
+- **fflate**: Used for in-memory ZIP extraction. This is a pure JavaScript library that works in browsers without any polyfills. The `unzipSync` function takes a `Uint8Array` and returns an object mapping filenames to their contents as `Uint8Array`.
+
+- **Fetch API**: Used for all HTTP requests via `httpsGet`. This is natively available in browsers, Node.js 18+, Deno, and Bun. No polyfill needed for modern runtimes.
+
 ## Current API coverage
 
 The SDK currently provides access to:
 
-- **Books**: `getBookInfo`, `getBooks`, `getBookContents`, `getBookIndex`, `downloadBook`
+- **Books**: `getBookInfo`, `getBooks`, `getBookContents`, `getBookIndex`
+- **Books (Node.js only)**: `downloadBook` (via `ketab-online-sdk/node`)
 - **Authors**: `getAuthorInfo`, `getAuthors`
 - **Categories**: `getCategoryInfo`, `getCategories`
 
@@ -125,5 +176,16 @@ All endpoints support the standard ketabonline.com API parameters including pagi
 - **Sorting**: Use `sort_field` and `sort_direction` parameters
 - **Hierarchical data**: The `is_recursive` parameter (0 or 1) controls whether nested structures include children
 - **Part selection**: Multi-volume works use the `part` parameter to specify which volume
+
+## Data flow for book contents
+
+Understanding how book data flows through the SDK:
+
+1. **Download**: `httpsGet` fetches the ZIP file as `Uint8Array` via Fetch API
+2. **Extract**: `fflate.unzipSync` extracts the ZIP in memory, returning `{ [filename]: Uint8Array }`
+3. **Decode**: `TextDecoder.decode()` converts the `Uint8Array` to a UTF-8 string
+4. **Parse**: `JSON.parse()` converts the string to a JavaScript object
+
+All of these operations are browser-compatible. The only Node.js-specific operation is `fs.writeFile` in `downloadBook`, which is why that function lives in `src/node.ts`.
 
 Thanks for helping keep the project healthy!

@@ -369,7 +369,7 @@ type Hadeeth = {
 /**
  * Table of contents entry for a book.
  */
-type IndexItem = {
+export type IndexItem = {
     /** Child index entries (nested structure) */
     children?: IndexItem[];
     /** Unique identifier for the index entry */

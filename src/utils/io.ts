@@ -1,6 +1,3 @@
-import { promises as fs } from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { unzipSync } from 'fflate';
 import { httpsGet } from './network';
 
@@ -12,17 +9,6 @@ export type UnzippedEntry = {
     name: string;
     /** Entry data as bytes */
     data: Uint8Array;
-};
-
-/**
- * Creates a temporary directory inside the operating system's temp folder.
- *
- * @param prefix - The prefix to use for the temporary directory name.
- * @returns A promise that resolves with the path to the created directory.
- */
-export const createTempDir = async (prefix: string): Promise<string> => {
-    const tempDirBase = path.join(os.tmpdir(), prefix);
-    return fs.mkdtemp(tempDirBase);
 };
 
 /**

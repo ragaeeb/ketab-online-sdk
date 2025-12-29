@@ -1,86 +1,80 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test';
-import { EventEmitter } from 'node:events';
+import { afterEach, describe, expect, it, mock } from 'bun:test';
 
-const networkHttpsGetMock = mock();
-
-// Mock node:https for network.test.ts
-mock.module('node:https', () => ({
-    default: { get: networkHttpsGetMock },
-    get: networkHttpsGetMock,
-}));
-
-// Import after mocking
-const { buildUrl, httpsGet } = await import('./network');
+// Store original fetch
+const originalFetch = globalThis.fetch;
 
 describe('buildUrl', () => {
-    it('should add query parameters to the endpoint', () => {
+    it('should add query parameters to the endpoint', async () => {
+        const { buildUrl } = await import('./network');
         const url = buildUrl('https://example.com/resource', { page: 2, q: 'search' });
         expect(url.toString()).toBe('https://example.com/resource?page=2&q=search');
     });
 });
 
 describe('httpsGet', () => {
-    beforeEach(() => {
-        networkHttpsGetMock.mockReset();
-        networkHttpsGetMock.mockClear();
-    });
-
     afterEach(() => {
-        // Ensure complete cleanup after each test
-        networkHttpsGetMock.mockReset();
+        // Restore original fetch after each test
+        globalThis.fetch = originalFetch;
     });
 
     it('should parse JSON responses automatically', async () => {
-        networkHttpsGetMock.mockImplementation((_url: string | URL, handler: (res: any) => void) => {
-            const response = new EventEmitter() as any;
-            response.headers = { 'content-type': 'application/json' };
+        const mockFetch = mock(
+            async () =>
+                new Response(JSON.stringify({ success: true }), {
+                    headers: { 'content-type': 'application/json' },
+                }),
+        );
+        globalThis.fetch = mockFetch;
 
-            handler(response);
+        // Import the function fresh - use a unique query param to bust cache
+        const networkModule = await import('./network?json-test');
+        const result = await networkModule.httpsGet('https://example.com');
 
-            process.nextTick(() => {
-                response.emit('data', Buffer.from(JSON.stringify({ success: true })));
-                response.emit('end');
-            });
-
-            const request = new EventEmitter();
-            return request;
-        });
-
-        const result = await httpsGet('https://example.com');
         expect(result).toEqual({ success: true });
     });
 
     it('should return Uint8Array for non-JSON responses', async () => {
-        networkHttpsGetMock.mockImplementation((_url: string | URL, handler: (res: any) => void) => {
-            const response = new EventEmitter() as any;
-            response.headers = { 'content-type': 'application/octet-stream' };
-            handler(response);
+        const binaryData = new TextEncoder().encode('hello');
+        const mockFetch = mock(
+            async () =>
+                new Response(binaryData, {
+                    headers: { 'content-type': 'application/octet-stream' },
+                }),
+        );
+        globalThis.fetch = mockFetch;
 
-            process.nextTick(() => {
-                response.emit('data', Buffer.from('hello'));
-                response.emit('end');
-            });
+        const networkModule = await import('./network?binary-test');
+        const result = await networkModule.httpsGet('https://example.com');
 
-            const request = new EventEmitter();
-            return request;
-        });
-
-        const result = await httpsGet('https://example.com');
         expect(result).toBeInstanceOf(Uint8Array);
         expect(new TextDecoder().decode(result as Uint8Array)).toBe('hello');
     });
 
-    it('should reject when request errors', async () => {
-        networkHttpsGetMock.mockImplementation((_url: string | URL, _handler: (res: any) => void) => {
-            const request = new EventEmitter();
+    it('should throw when response is not ok', async () => {
+        const mockFetch = mock(
+            async () =>
+                new Response(null, {
+                    status: 500,
+                    statusText: 'Internal Server Error',
+                }),
+        );
+        globalThis.fetch = mockFetch;
 
-            process.nextTick(() => {
-                request.emit('error', new Error('network failure'));
-            });
+        const networkModule = await import('./network?error-test');
 
-            return request;
+        await expect(networkModule.httpsGet('https://example.com')).rejects.toThrow(
+            'Error making request: 500 Internal Server Error',
+        );
+    });
+
+    it('should reject when fetch fails', async () => {
+        const mockFetch = mock(async () => {
+            throw new Error('network failure');
         });
+        globalThis.fetch = mockFetch;
 
-        await expect(httpsGet('https://example.com')).rejects.toThrow('Error making request: network failure');
+        const networkModule = await import('./network?network-error-test');
+
+        await expect(networkModule.httpsGet('https://example.com')).rejects.toThrow('network failure');
     });
 });
