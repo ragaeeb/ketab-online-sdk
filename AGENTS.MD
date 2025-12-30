@@ -14,6 +14,23 @@ Welcome to the `ketab-online-sdk` repository. This document captures the convent
 - `testing/e2e.test.ts` exercises the remote API. It is skipped in CI but useful for manual verification.
 - `tsdown.config.ts` defines the bundler options with dual entry points (`src/index.ts`, `src/node.ts`).
 - Tooling configs (`biome.json`, `tsconfig.json`, `release.config.mjs`) live at the repo root.
+- `demo/` contains a Vite + Preact demo application.
+
+## Demo Application
+
+**Live URL**: http://ketabonline.surge.sh/
+
+The demo (`demo/`) showcases SDK features:
+- Load any book by ID from ketabonline.com
+- View pages with HTML and Markdown conversion
+- Jump to specific pages via URL hash (`#page-{id}`)
+- URL state management (`?book={id}`)
+
+### Deploy
+```bash
+cd demo
+npm run deploy
+```
 
 ## Browser compatibility
 

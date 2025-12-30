@@ -1,11 +1,5 @@
 import { describe, expect, mock, test } from 'bun:test';
-import { EventEmitter } from 'node:events';
 import { getAuthorInfo, getBookContents, getBookInfo, getBooks, getCategoryInfo } from '../src/index';
-
-mock.module('unzipper', () => ({
-    default: { Parse: () => new EventEmitter() },
-    Parse: () => new EventEmitter(),
-}));
 
 const e2eDescribe = process.env.RUN_E2E === 'true' ? describe : describe.skip;
 

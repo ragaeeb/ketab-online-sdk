@@ -198,6 +198,61 @@ describe('content utilities', () => {
             const html = '<P>Uppercase tags</P>';
             expect(htmlToMarkdown(html)).toBe('Uppercase tags');
         });
+
+        it('should handle g-table structures with g-cell elements joined by spaces', () => {
+            const html = `<div class="g-table">                             <div class="g-cell">٢ -  كون أهل الباطل يرمون أهل الحق زورًا بأنهم ممن دب ودرج </div>                             <div class="g-border"> ... </div>                             <div class="g-cell"> إلخ، فليس معنى ذلك، أننا نترك قول الحق لشبهاتهم، وقد سبق هذا غير مرة.</div>                         </div><p class="g-paragraph g-rtl" id="p-1">Next paragraph.</p>`;
+            const result = htmlToMarkdown(html);
+            // Should join cells with space, not line breaks
+            expect(result).toContain('٢ -  كون أهل الباطل يرمون أهل الحق زورًا بأنهم ممن دب ودرج');
+            expect(result).toContain('إلخ، فليس معنى ذلك، أننا نترك قول الحق لشبهاتهم، وقد سبق هذا غير مرة.');
+            // Should INCLUDE the g-border "..." content inline (matching ketabonline.com rendering)
+            expect(result).toContain('...');
+            // All content should be on the same line: cell1 ... cell2
+            expect(result).toMatch(/ممن دب ودرج\s+\.\.\.\s+إلخ/);
+            // Next paragraph should follow
+            expect(result).toContain('Next paragraph.');
+        });
+
+        it('should convert (( )) to Arabic quotation marks «» anywhere in text', () => {
+            // Test within g-hadeeth span
+            const html1 =
+                '<p class="g-paragraph">قال الذهبي في <span class="g-hadeeth">(( الميزان ))</span> ترجمة علي</p>';
+            const result1 = htmlToMarkdown(html1);
+            expect(result1).toContain('«الميزان»');
+            expect(result1).not.toContain('((');
+            expect(result1).not.toContain('))');
+            expect(result1).toContain('قال الذهبي في «الميزان» ترجمة علي');
+
+            // Test outside any span (plain text)
+            const html2 = '<p class="g-paragraph">لقولكم:  (( لا داعي ))</p>';
+            const result2 = htmlToMarkdown(html2);
+            expect(result2).toContain('«لا داعي»');
+            expect(result2).not.toContain('((');
+
+            // Test cross-page case: only (( without )) on same page
+            const html3 = '<p class="g-paragraph">لقولكم:  (( لا</p>';
+            const result3 = htmlToMarkdown(html3);
+            expect(result3).toContain('«لا');
+            expect(result3).not.toContain('((');
+
+            // Test cross-page case: only )) without (( on same page
+            const html4 = '<p class="g-paragraph">داعي )) في هذا</p>';
+            const result4 = htmlToMarkdown(html4);
+            expect(result4).toContain('داعي» في هذا');
+            expect(result4).not.toContain('))');
+        });
+
+        it('should remove footnote references for cleaner markdown', () => {
+            const html =
+                '<p class="g-paragraph">على الذين تسوَّروا مكانة <span class="g-parentheses">  <a href="#foot-1" class="g-footnote-link">(١)</a> </span> ، لا أنه يقول</p>';
+            const result = htmlToMarkdown(html);
+            // Footnote reference should be removed
+            expect(result).not.toContain('(١)');
+            expect(result).not.toContain('g-footnote-link');
+            // But the rest of the text should be intact
+            expect(result).toContain('على الذين تسوَّروا مكانة');
+            expect(result).toContain('لا أنه يقول');
+        });
     });
 
     describe('page utilities', () => {

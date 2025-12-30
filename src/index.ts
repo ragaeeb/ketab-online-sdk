@@ -14,7 +14,7 @@ import { removeFalsyValues } from './utils/common';
 import { apiUrl, buildUrl, httpsGet } from './utils/network';
 
 // Re-export types for consumers
-export type { IndexItem, Page } from './types';
+export * from './types';
 export type { Footnote } from './utils/content';
 
 // Re-export content utilities

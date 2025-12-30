@@ -60,6 +60,33 @@ export const htmlToMarkdown = (html: string): string => {
 
     let result = html;
 
+    // Handle g-table structures: extract g-cell and g-border content and join with spaces
+    // This converts table-like structures to inline text, matching ketabonline's rendering
+    // The g-table contains nested g-cell and g-border divs, so we use greedy matching
+    // to capture all content until the final </div> before a <p> tag or end
+    result = result.replace(/<div[^>]*class="g-table"[^>]*>([\s\S]*)<\/div>(?=\s*<p|\s*$)/gi, (_, tableContent) => {
+        // Extract text from g-cell and g-border elements (both contain text to preserve)
+        const cellTexts: string[] = [];
+        // Match both g-cell and g-border divs
+        const cellRegex = /<div[^>]*class="g-(?:cell|border)"[^>]*>([\s\S]*?)<\/div>/gi;
+        for (const cellMatch of (tableContent as string).matchAll(cellRegex)) {
+            const cellText = stripHtmlTags(cellMatch[1]!).trim();
+            if (cellText) {
+                cellTexts.push(cellText);
+            }
+        }
+        // Join cells with space to create inline text
+        return cellTexts.length > 0 ? `${cellTexts.join(' ')}\n\n` : '';
+    });
+
+    // Remove footnote reference links for cleaner markdown output
+    result = removeFootnoteReferences(result);
+
+    // Convert (( and )) to « and » (Arabic quotation marks) independently
+    // This handles cases where opening/closing brackets span across pages
+    result = result.replace(/\(\(\s*/g, '«');
+    result = result.replace(/\s*\)\)/g, '»');
+
     // Extract paragraphs and convert to markdown
     result = result.replace(/<p[^>]*>([\s\S]*?)<\/p>/gi, (_, content) => {
         // Strip inner HTML tags from paragraph content
