@@ -14,22 +14,29 @@ Welcome to the `ketab-online-sdk` repository. This document captures the convent
 - `testing/e2e.test.ts` exercises the remote API. It is skipped in CI but useful for manual verification.
 - `tsdown.config.ts` defines the bundler options with dual entry points (`src/index.ts`, `src/node.ts`).
 - Tooling configs (`biome.json`, `tsconfig.json`, `release.config.mjs`) live at the repo root.
-- `demo/` contains a Vite + Preact demo application.
+- `demo/` contains a TanStack Start + React demo application deployed to Cloudflare Pages.
 
 ## Demo Application
 
-**Live URL**: http://ketabonline.surge.sh/
+**Live URL**: https://demo.ketabonline.workers.dev/
 
-The demo (`demo/`) showcases SDK features:
-- Load any book by ID from ketabonline.com
-- View pages with HTML and Markdown conversion
-- Jump to specific pages via URL hash (`#page-{id}`)
-- URL state management (`?book={id}`)
+The demo (`demo/`) showcases SDK features with a full-featured web application:
+- Browse categories, books, and authors with search and pagination
+- View book content with HTML and Markdown toggle
+- Server-side API proxying via TanStack Start server functions (bypasses CORS)
+- Dark theme with responsive design
+
+### Tech Stack
+- TanStack Start (React 19, file-based routing, server functions)
+- Tailwind CSS v4
+- Cloudflare Pages deployment
 
 ### Deploy
 ```bash
 cd demo
-npm run deploy
+bun install
+bunx wrangler login     # Authenticate with Cloudflare (first time only)
+bun run deploy          # Build and deploy to Cloudflare Pages
 ```
 
 ## Browser compatibility
@@ -204,5 +211,44 @@ Understanding how book data flows through the SDK:
 4. **Parse**: `JSON.parse()` converts the string to a JavaScript object
 
 All of these operations are browser-compatible. The only Node.js-specific operation is `fs.writeFile` in `downloadBook`, which is why that function lives in `src/node.ts`.
+
+## Lessons Learned (Demo Development)
+
+Key discoveries from building and maintaining the TanStack Start demo:
+
+### TanStack Start Server Functions
+
+- Use `createServerFn().inputValidator()` not `.validator()` — the API changed in recent versions
+- Server functions accept a `{ data }` wrapper when called, e.g., `fetchBooks({ data: { page: 1 } })`
+- Server functions run on the server, so they can bypass CORS by making direct API calls
+
+### TanStack Router Typing
+
+- When using `loaderDeps` with `loader`, TypeScript doesn't infer the deps type automatically
+- Fix by casting: `const { search } = deps as { search: SearchType }`
+- Order matters: `validateSearch` → `loaderDeps` → `loader` helps with readability
+
+### Biome Configuration
+
+- Don't have nested `biome.json` files when a parent directory already has one
+- Run `bun run lint` from root to lint the entire project including `demo/`
+- Tailwind's `@apply` directive requires enabling `tailwindDirectives` in Biome CSS parser, or avoid using it
+
+### React vs Preact
+
+- React uses `className`, Preact uses `class` — ensure consistency when migrating
+- React hooks import from `'react'`, not `'preact/hooks'`
+- After changing frameworks, delete old component files to avoid TypeScript errors
+
+### UI/UX Fixes
+
+- Set `background-color` on both `html` and `body` elements to prevent white flash during fast scrolling
+- Use `type="button"` on all non-submit buttons for accessibility compliance
+- Use SDK utilities like `stripHtmlTags` instead of duplicating functionality
+
+### API Search Results
+
+- The ketabonline API returns search results with `<em>` tags around matched terms
+- Use `stripHtmlTags()` to clean these for display
 
 Thanks for helping keep the project healthy!

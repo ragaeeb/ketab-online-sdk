@@ -1,0 +1,12 @@
+{
+    "addOnOptions": {},
+    "chosenAddOns": ["start", "biome", "cloudflare"],
+    "framework": "react-cra",
+    "git": false,
+    "mode": "file-router",
+    "packageManager": "bun",
+    "projectName": "demo",
+    "tailwind": true,
+    "typescript": true,
+    "version": 1
+}

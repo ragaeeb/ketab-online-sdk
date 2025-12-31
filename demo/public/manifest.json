@@ -1,0 +1,15 @@
+{
+    "background_color": "#1e293b",
+    "display": "standalone",
+    "icons": [
+        {
+            "sizes": "any",
+            "src": "icon.svg",
+            "type": "image/svg+xml"
+        }
+    ],
+    "name": "Ketab Online SDK Demo",
+    "short_name": "Ketab Demo",
+    "start_url": ".",
+    "theme_color": "#0891b2"
+}

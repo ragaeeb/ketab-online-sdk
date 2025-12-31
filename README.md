@@ -15,7 +15,7 @@
 SDK to access the public APIs exposed by [ketabonline.com](https://ketabonline.com). The library provides
 helpers to download raw book data, inspect authors and categories, retrieve table of contents, and search for titles without having to reverse engineer the HTTP endpoints yourself.
 
-**🚀 [Try the Live Demo](https://ketabonline.surge.sh/)** — Preview book content and test markdown converters directly in your browser.
+**🚀 [Try the Live Demo](https://demo.ketabonline.workers.dev/)** — Browse categories, books, and authors with search and pagination. Built with TanStack Start and deployed to Cloudflare Pages. See [`demo/README.md`](./demo/README.md) for details.
 
 **Browser-compatible**: The main entry point uses the Fetch API and works in browsers, Node.js 18+, Deno, and other modern JavaScript runtimes. Node.js-specific features (like `downloadBook`) are available via a separate import path.
 

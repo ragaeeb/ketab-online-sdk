@@ -403,7 +403,7 @@ type Meta = {
 /**
  * Reference to a book part or volume.
  */
-type PartReference = {
+export type PartReference = {
     /** Unique identifier for the part */
     id: number;
     /** Part name or title */
@@ -451,7 +451,7 @@ type PaginationItem = {
 /**
  * Navigation links for paginated results.
  */
-type PaginationLinks = {
+export type PaginationLinks = {
     /** URL to the first page */
     first: string;
     /** URL to the last page */
@@ -465,7 +465,7 @@ type PaginationLinks = {
 /**
  * Metadata about paginated results.
  */
-type PaginationMeta = {
+export type PaginationMeta = {
     /** Current page number */
     current_page: number;
     /** Starting record number */
@@ -483,7 +483,7 @@ type PaginationMeta = {
 /**
  * Detailed information about a book part or volume.
  */
-type Part = PartReference & {
+export type Part = PartReference & {
     /** Author of this part (if different from book author) */
     author?: string;
     /** Creator or editor of this part */
@@ -515,7 +515,7 @@ type Part = PartReference & {
 /**
  * Quranic verse reference information.
  */
-type Quran = {
+export type Quran = {
     /** Starting verse ID */
     from_aya_id: number;
     /** Whether this is a range of verses */
